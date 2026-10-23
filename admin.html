@@ -3,16 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>لوحة التحكم - إدارة منصة يُسر</title>
+  <title>لوحة التحكم - إدارة شرائح التمويل</title>
   
   <!-- Tailwind CSS & Font Awesome -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <!-- Vue 3 CDN -->
+  <!-- Vue 3 & Supabase JS -->
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-
-  <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -27,9 +25,9 @@
       <div>
         <h1 class="font-bold text-lg flex items-center gap-2">
           <i class="fa-solid fa-user-shield text-amber-400"></i>
-          لوحة إدارة قاعدة البيانات ( Dashboard)
+          لوحة إدارة قاعدة البيانات (Supabase Dashboard)
         </h1>
-        <p class="text-xs text-slate-400">إدارة شرائح التمويل والأقساط حياً  </p>
+        <p class="text-xs text-slate-400">إضافة، تعديل، وحذف الشرائح وتحديد عدد أشهر الأقساط بحرية</p>
       </div>
       <span class="bg-emerald-500/20 text-emerald-300 text-xs font-bold px-3 py-1 rounded-full border border-emerald-500/30 flex items-center gap-1">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -37,52 +35,66 @@
       </span>
     </header>
 
-    <!-- Add New Tier Form -->
+    <!-- Add / Edit Form -->
     <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
       <h2 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
-        <i class="fa-solid fa-plus-circle text-teal-600"></i>
-        إضافة شريحة تمويل جديدة  
+        <i :class="['fa-solid', isEditing ? 'fa-pen-to-square text-amber-600' : 'fa-plus-circle text-teal-600']"></i>
+        <span>{{ isEditing ? 'تعديل شريحة التمويل الحالية' : 'إضافة شريحة تمويل جديدة' }}</span>
       </h2>
 
-     <form @submit.prevent="addTierToSupabase" class="space-y-4 text-xs">
-  <div class="grid grid-cols-2 gap-3">
-    <div>
-      <label class="font-bold text-slate-600 block mb-1">مبلغ الشريحة (ريال)</label>
-      <input v-model.number="form.tier_amount" type="number" step="any" required placeholder="مثال: 2000" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white">
-    </div>
-    <div>
-      <label class="font-bold text-slate-600 block mb-1">كلفة الآجل الإجمالية</label>
-      <!-- إضافة step="any" هنا تسمح بإدخال الكسور مثل 3162.5 -->
-      <input v-model.number="form.total_cost" type="number" step="any" required placeholder="مثال: 3162.5" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white">
-    </div>
-  </div>
+      <form @submit.prevent="saveTier" class="space-y-4 text-xs">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-600 block mb-1">مبلغ الشريحة (ريال)</label>
+            <input v-model.number="form.tier_amount" type="number" step="any" required placeholder="مثال: 2000" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white">
+          </div>
+          <div>
+            <label class="font-bold text-slate-600 block mb-1">كلفة الآجل الإجمالية</label>
+            <input v-model.number="form.total_cost" type="number" step="any" required placeholder="مثال: 3162.5" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white">
+          </div>
+        </div>
 
-  <div class="grid grid-cols-2 gap-3">
-    <div>
-      <label class="font-bold text-slate-600 block mb-1">القسط الأول (استحقاق يوم 27)</label>
-      <input v-model.number="form.first_installment" type="number" step="any" required placeholder="مثال: 1350" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white">
-    </div>
-    <div>
-      <label class="font-bold text-slate-600 block mb-1">يوم الاستحقاق الشهري</label>
-      <input v-model.number="form.due_day" type="number" required placeholder="27" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white">
-    </div>
-  </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="font-bold text-slate-600 block mb-1">القسط الأول (استحقاق 27)</label>
+            <input v-model.number="form.first_installment" type="number" step="any" required placeholder="مثال: 1350" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white">
+          </div>
+          <div>
+            <label class="font-bold text-slate-600 block mb-1">عدد أشهر الأقساط اللاحقة</label>
+            <input v-model.number="form.months_count" type="number" min="1" required placeholder="مثال: 3 أو 5" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white">
+          </div>
+          <div>
+            <label class="font-bold text-slate-600 block mb-1">يوم الاستحقاق الشهري</label>
+            <input v-model.number="form.due_day" type="number" required placeholder="27" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white">
+          </div>
+        </div>
 
-  <button 
-    type="submit" 
-    :disabled="isSubmitting"
-    class="w-full bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white font-bold py-3 rounded-xl transition-all shadow flex justify-center items-center gap-2"
-  >
-    <i v-if="isSubmitting" class="fa-solid fa-circle-notch fa-spin"></i>
-    <span>{{ isSubmitting ? 'جاري الحفظ في Supabase...' : 'حفظ وإرسال لقاعدة البيانات' }}</span>
-  </button>
-</form>
+        <div class="flex gap-2 pt-2">
+          <button 
+            type="submit" 
+            :disabled="isSubmitting"
+            class="flex-1 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white font-bold py-3 rounded-xl transition-all shadow flex justify-center items-center gap-2"
+          >
+            <i v-if="isSubmitting" class="fa-solid fa-circle-notch fa-spin"></i>
+            <span>{{ isSubmitting ? 'جاري الحفظ...' : (isEditing ? 'حفظ التعديلات' : 'إضافة الشريحة لقاعدة البيانات') }}</span>
+          </button>
+          
+          <button 
+            v-if="isEditing" 
+            type="button" 
+            @click="cancelEdit"
+            class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-3 rounded-xl transition-all"
+          >
+            إلغاء
+          </button>
+        </div>
+      </form>
     </div>
 
     <!-- Active Tiers Table -->
     <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-xs font-bold text-slate-700">الشرائح المسجلة حالياً  :</h3>
+        <h3 class="text-xs font-bold text-slate-700">الشرائح المسجلة حالياً في Supabase:</h3>
         <button @click="fetchTiers" class="text-xs text-teal-600 hover:underline font-bold flex items-center gap-1">
           <i class="fa-solid fa-rotate"></i> تحديث البيانات
         </button>
@@ -90,7 +102,7 @@
 
       <div v-if="isLoading" class="text-center py-6 text-xs text-slate-400">
         <i class="fa-solid fa-circle-notch fa-spin text-lg block mb-2 text-teal-600"></i>
-        جاري جلب البيانات من قاعدة البيانات...
+        جاري جلب البيانات...
       </div>
 
       <div v-else-if="tiers.length === 0" class="text-center py-6 text-xs text-slate-400 border border-dashed rounded-xl">
@@ -101,11 +113,18 @@
         <div v-for="t in tiers" :key="t.id" class="py-3 flex justify-between items-center">
           <div>
             <span class="font-extrabold text-teal-700 text-base ml-2">{{ t.tier_amount }} ريال</span>
-            <span class="text-slate-500 text-xs">| الإجمالي: {{ t.total_cost }} ريال | القسط الأول: {{ t.first_installment }} ريال (يوم {{ t.due_day }})</span>
+            <span class="text-slate-500 text-xs">
+              | الإجمالي: {{ t.total_cost }} ريال | القسط الأول: {{ t.first_installment }} ريال | الأقساط اللاحقة: {{ t.months_count || 3 }} أشهر
+            </span>
           </div>
-          <button @click="deleteTier(t.id)" class="text-rose-600 font-bold bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg transition-all">
-            حذف
-          </button>
+          <div class="flex gap-2">
+            <button @click="editTier(t)" class="text-teal-600 font-bold bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-lg transition-all">
+              تعديل
+            </button>
+            <button @click="deleteTier(t.id)" class="text-rose-600 font-bold bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg transition-all">
+              حذف
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -115,11 +134,9 @@
   <script>
     const { createApp, ref, onMounted } = Vue;
 
-    // Supabase Credentials
     const SUPABASE_URL = 'https://kdmlkhlceihidcmwdhxi.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_G5uoFE-wczB6h1YeBAt__g_0ktNTptG';
-    
-    
+    const SUPABASE_ANON_KEY = 'sb_publishable_G5uoFE-wczB6h1YeBAT__g_0ktNT_ضع_المفتاح_الكامل_هنا';
+
     let supabaseClient = null;
     if (window.supabase && window.supabase.createClient) {
       supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -130,11 +147,14 @@
         const tiers = ref([]);
         const isLoading = ref(true);
         const isSubmitting = ref(false);
+        const isEditing = ref(false);
+        const editingId = ref(null);
 
         const form = ref({
           tier_amount: null,
           total_cost: null,
           first_installment: null,
+          months_count: 3,
           due_day: 27
         });
 
@@ -153,48 +173,86 @@
           isLoading.value = false;
         };
 
-      // 1. عند إضافة شريحة جديدة
-const addTierToSupabase = async () => {
-  isSubmitting.value = true;
-  if (supabaseClient) {
-    const { error } = await supabaseClient
-      .from('user_loans')
-      .insert([{
-        tier_amount: form.value.tier_amount,
-        total_cost: form.value.total_cost,
-        first_installment: form.value.first_installment,
-        due_day: form.value.due_day
-      }]);
+        const saveTier = async () => {
+          isSubmitting.value = true;
+          if (supabaseClient) {
+            if (isEditing.value) {
+              // تحديث سجل موجود
+              const { error } = await supabaseClient
+                .from('user_loans')
+                .update({
+                  tier_amount: form.value.tier_amount,
+                  total_cost: form.value.total_cost,
+                  first_installment: form.value.first_installment,
+                  months_count: form.value.months_count,
+                  due_day: form.value.due_day
+                })
+                .eq('id', editingId.value);
 
-    if (error) {
-      showToast('⚠️ تعذر الحفظ: ' + error.message, 'error');
-    } else {
-      showToast('🎉 تم تسجيل الشريحة الجديدة ونشرها بنجاح!', 'success');
-      form.value = { tier_amount: null, total_cost: null, first_installment: null, due_day: 27 };
-      await fetchTiers();
-    }
-  }
-  isSubmitting.value = false;
-};
+              if (error) {
+                alert('خطأ في التعديل: ' + error.message);
+              } else {
+                alert('✨ تم تحديث الشريحة بنجاح!');
+                cancelEdit();
+                await fetchTiers();
+              }
+            } else {
+              // إضافة سجل جديد
+              const { error } = await supabaseClient
+                .from('user_loans')
+                .insert([{
+                  tier_amount: form.value.tier_amount,
+                  total_cost: form.value.total_cost,
+                  first_installment: form.value.first_installment,
+                  months_count: form.value.months_count,
+                  due_day: form.value.due_day
+                }]);
 
-// 2. عند حذف شريحة
-const deleteTier = async (id) => {
-  if (!confirm('هل أنت متأكد من رغبتك في حذف هذه الشريحة نهائياً من قاعدة البيانات؟')) return;
+              if (error) {
+                alert('خطأ في الحفظ: ' + error.message);
+              } else {
+                alert('🎉 تمت إضافة الشريحة بنجاح!');
+                form.value = { tier_amount: null, total_cost: null, first_installment: null, months_count: 3, due_day: 27 };
+                await fetchTiers();
+              }
+            }
+          }
+          isSubmitting.value = false;
+        };
 
-  if (supabaseClient) {
-    const { error } = await supabaseClient
-      .from('user_loans')
-      .delete()
-      .eq('id', id);
+        const editTier = (t) => {
+          isEditing.value = true;
+          editingId.value = t.id;
+          form.value = {
+            tier_amount: t.tier_amount,
+            total_cost: t.total_cost,
+            first_installment: t.first_installment,
+            months_count: t.months_count || 3,
+            due_day: t.due_day || 27
+          };
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
 
-    if (error) {
-      showToast('⚠️ حدث خطأ أثناء الحذف: ' + error.message, 'error');
-    } else {
-      showToast('🗑️ تم حذف الشريحة بنجاح من قاعدة البيانات', 'success');
-      await fetchTiers();
-    }
-  }
-};
+        const cancelEdit = () => {
+          isEditing.value = false;
+          editingId.value = null;
+          form.value = { tier_amount: null, total_cost: null, first_installment: null, months_count: 3, due_day: 27 };
+        };
+
+        const deleteTier = async (id) => {
+          if (!confirm('هل أنت متأكد من حذف هذه الشريحة؟')) return;
+          if (supabaseClient) {
+            const { error } = await supabaseClient.from('user_loans.').delete().eq('id', id); // ملاحظة: الجدول هو user_loans بدون نقطة
+            // للتأكد من اسم الجدول الصحيح:
+            const { error: err2 } = await supabaseClient.from('user_loans').delete().eq('id', id);
+            if (err2) {
+              alert('خطأ في الحذف: ' + err2.message);
+            } else {
+              await fetchTiers();
+            }
+          }
+        };
+
         onMounted(() => {
           fetchTiers();
         });
@@ -204,9 +262,12 @@ const deleteTier = async (id) => {
           form,
           isLoading,
           isSubmitting,
-          fetchTiers,
-          addTierToSupabase,
-          deleteTier
+          isEditing,
+          saveTier,
+          editTier,
+          cancelEdit,
+          deleteTier,
+          fetchTiers
         };
       }
     }).mount('#admin-app');
