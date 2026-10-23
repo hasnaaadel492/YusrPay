@@ -153,48 +153,48 @@
           isLoading.value = false;
         };
 
-        const addTierToSupabase = async () => {
-          isSubmitting.value = true;
-          if (supabaseClient) {
-            const { error } = await supabaseClient
-              .from('user_loans')
-              .insert([
-                {
-                  tier_amount: form.value.tier_amount,
-                  total_cost: form.value.total_cost,
-                  first_installment: form.value.first_installment,
-                  due_day: form.value.due_day
-                }
-              ]);
+      // 1. عند إضافة شريحة جديدة
+const addTierToSupabase = async () => {
+  isSubmitting.value = true;
+  if (supabaseClient) {
+    const { error } = await supabaseClient
+      .from('user_loans')
+      .insert([{
+        tier_amount: form.value.tier_amount,
+        total_cost: form.value.total_cost,
+        first_installment: form.value.first_installment,
+        due_day: form.value.due_day
+      }]);
 
-            if (error) {
-              alert('حدث خطأ أثناء الحفظ: ' + error.message);
-            } else {
-              alert('تمت إضافة الشريحة بنجاح إلى قاعدة البيانات!');
-              form.value = { tier_amount: null, total_cost: null, first_installment: null, due_day: 27 };
-              await fetchTiers();
-            }
-          }
-          isSubmitting.value = false;
-        };
+    if (error) {
+      showToast('⚠️ تعذر الحفظ: ' + error.message, 'error');
+    } else {
+      showToast('🎉 تم تسجيل الشريحة الجديدة ونشرها بنجاح!', 'success');
+      form.value = { tier_amount: null, total_cost: null, first_installment: null, due_day: 27 };
+      await fetchTiers();
+    }
+  }
+  isSubmitting.value = false;
+};
 
-        const deleteTier = async (id) => {
-          if (!confirm('هل أنت متاكد من حذف هذه الشريحة من قاعدة البيانات؟')) return;
+// 2. عند حذف شريحة
+const deleteTier = async (id) => {
+  if (!confirm('هل أنت متأكد من رغبتك في حذف هذه الشريحة نهائياً من قاعدة البيانات؟')) return;
 
-          if (supabaseClient) {
-            const { error } = await supabaseClient
-              .from('user_loans')
-              .delete()
-              .eq('id', id);
+  if (supabaseClient) {
+    const { error } = await supabaseClient
+      .from('user_loans')
+      .delete()
+      .eq('id', id);
 
-            if (error) {
-              alert('حدث خطأ أثناء الحذف: ' + error.message);
-            } else {
-              await fetchTiers();
-            }
-          }
-        };
-
+    if (error) {
+      showToast('⚠️ حدث خطأ أثناء الحذف: ' + error.message, 'error');
+    } else {
+      showToast('🗑️ تم حذف الشريحة بنجاح من قاعدة البيانات', 'success');
+      await fetchTiers();
+    }
+  }
+};
         onMounted(() => {
           fetchTiers();
         });
