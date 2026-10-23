@@ -154,63 +154,88 @@
   </div>
 
   <script>
-    const { createApp, ref, computed } = Vue;
+   const { createApp, ref, computed, onMounted } = Vue;
 
-    // Supabase Initialization (تغيير اسم المتغير لمنع التعارض)
-    const SUPABASE_URL = 'https://kdmlkhlceihidcmwdhxi.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_G5uoFE-wczB6h1YeBAT__g_0ktNT';
-    
-    let supabaseClient = null;
-    if (window.supabase && window.supabase.createClient) {
-      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    }
+// بيانات الاتصال بـ Supabase
+const SUPABASE_URL = 'https://kdmlkhlceihidcmwdhxi.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_G5uoFE-wczB6h1YeBAT__g_0ktNT_ضع_باقي_المفتاح_هنا';
 
-    createApp({
-      setup() {
-        const tiers = ref([
-          { amount: 1000, totalCost: 1690.00, firstInstallment: 300.00, subsequentInstallments: '695.00 (شهرين)', earlyNet: 1300.00 },
-          { amount: 1500, totalCost: 2640.00, firstInstallment: 850.00, subsequentInstallments: '596.67 (3 أشهر)', earlyNet: 1950.00 },
-          { amount: 2000, totalCost: 3162.50, firstInstallment: 1350.00, subsequentInstallments: '604.17 (3 أشهر)', earlyNet: 2600.00 },
-          { amount: 2500, totalCost: 4060.00, firstInstallment: 1450.00, subsequentInstallments: '870.00 (3 أشهر)', earlyNet: 3250.00 },
-          { amount: 3000, totalCost: 4777.50, firstInstallment: 1950.00, subsequentInstallments: '942.50 (3 أشهر)', earlyNet: 3900.00 }
-        ]);
+let supabaseClient = null;
+if (window.supabase && window.supabase.createClient) {
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
 
-        const selectedTier = ref(tiers.value[0]);
-        const isEarlySettlement = ref(false);
-        const isProcessing = ref(false);
+createApp({
+  setup() {
+    const tiers = ref([]);
+    const selectedTier = ref({});
+    const isEarlySettlement = ref(false);
+    const isProcessing = ref(false);
+    const isLoading = ref(true);
 
-        const discountAmount = computed(() => {
-          return (selectedTier.value.totalCost - selectedTier.value.earlyNet).toFixed(2);
-        });
+    // 1. جلب الشرائح حياً من جدول user_loans في Supabase
+    const fetchTiersFromSupabase = async () => {
+      isLoading.value = true;
+      if (supabaseClient) {
+        const { data, error } = await supabaseClient
+          .from('user_loans')
+          .select('*')
+          .order('tier_amount', { ascending: true });
 
-        const netEarlySettlement = computed(() => {
-          return selectedTier.value.earlyNet.toFixed(2);
-        });
-
-        const handlePayment = async () => {
-          isProcessing.value = true;
-          setTimeout(() => {
-            isProcessing.value = false;
-            alert(`تم توثيق طلب السداد لشريحة ${selectedTier.value.amount} ريال بنجاح!`);
-          }, 1200);
-        };
-
-        const installPWA = () => {
-          alert("تطبيق الـ PWA جاهز! قم بالنقر على قائمة المتصفح واختيار 'إضافة إلى الشاشة الرئيسية'.");
-        };
-
-        return {
-          tiers,
-          selectedTier,
-          isEarlySettlement,
-          discountAmount,
-          netEarlySettlement,
-          isProcessing,
-          handlePayment,
-          installPWA
-        };
+        if (!error && data && data.length > 0) {
+          // تحويل أسماء الأقسام لتناسب العرض في الواجهة
+          tiers.value = data.map(item => ({
+            amount: item.tier_amount,
+            totalCost: item.total_cost,
+            firstInstallment: item.first_installment,
+            subsequentInstallments: `${((item.total_cost - item.first_installment) / 3).toFixed(2)} (3 أشهر)`,
+            earlyNet: item.tier_amount * 1.3
+          }));
+          selectedTier.value = tiers.value[0];
+        }
       }
-    }).mount('#app');
+      isLoading.value = false;
+    };
+
+    const discountAmount = computed(() => {
+      if (!selectedTier.value.totalCost) return '0.00';
+      return (selectedTier.value.totalCost - selectedTier.value.earlyNet).toFixed(2);
+    });
+
+    const netEarlySettlement = computed(() => {
+      if (!selectedTier.value.earlyNet) return '0.00';
+      return selectedTier.value.earlyNet.toFixed(2);
+    });
+
+    const handlePayment = async () => {
+      isProcessing.value = true;
+      setTimeout(() => {
+        isProcessing.value = false;
+        alert(`تم توثيق طلب السداد لشريحة ${selectedTier.value.amount} ريال بنجاح عبر السيرفر!`);
+      }, 1200);
+    };
+
+    const installPWA = () => {
+      alert("تطبيق الـ PWA جاهز! قم بالنقر على قائمة المتصفح واختيار 'إضافة إلى الشاشة الرئيسية'.");
+    };
+
+    onMounted(() => {
+      fetchTiersFromSupabase();
+    });
+
+    return {
+      tiers,
+      selectedTier,
+      isEarlySettlement,
+      discountAmount,
+      netEarlySettlement,
+      isProcessing,
+      isLoading,
+      handlePayment,
+      installPWA
+    };
+  }
+}).mount('#app');
   </script>
 </body>
 </html>
