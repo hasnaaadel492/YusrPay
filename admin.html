@@ -14,7 +14,11 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <style> body { font-family: 'Cairo', sans-serif; } </style>
+  <style> 
+    body { font-family: 'Cairo', sans-serif; } 
+    .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+    .fade-enter-from, .fade-leave-to { opacity: 0; }
+  </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen p-4">
 
@@ -27,7 +31,7 @@
           <i class="fa-solid fa-user-shield text-amber-400"></i>
           لوحة إدارة قاعدة البيانات (Supabase Dashboard)
         </h1>
-        <p class="text-xs text-slate-400">إضافة، تعديل، وحذف الشرائح وتحديد عدد أشهر الأقساط بحرية</p>
+        <p class="text-xs text-slate-400">إضافة، تعديل، وحذف الشرائح وتحديد عدد أشهر الأقساط</p>
       </div>
       <span class="bg-emerald-500/20 text-emerald-300 text-xs font-bold px-3 py-1 rounded-full border border-emerald-500/30 flex items-center gap-1">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -35,12 +39,25 @@
       </span>
     </header>
 
+    <!-- Notification Toast -->
+    <transition name="fade">
+      <div v-if="toast.show" :class="['p-3 rounded-xl text-xs font-bold text-white flex items-center justify-between shadow-md', toast.type === 'error' ? 'bg-rose-600' : 'bg-emerald-600']">
+        <span>{{ toast.message }}</span>
+        <button @click="toast.show = false"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    </transition>
+
     <!-- Add / Edit Form -->
-    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
-      <h2 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
-        <i :class="['fa-solid', isEditing ? 'fa-pen-to-square text-amber-600' : 'fa-plus-circle text-teal-600']"></i>
-        <span>{{ isEditing ? 'تعديل شريحة التمويل الحالية' : 'إضافة شريحة تمويل جديدة' }}</span>
-      </h2>
+    <div :class="['rounded-2xl p-5 shadow-sm border transition-all', isEditing ? 'bg-amber-50/50 border-amber-200' : 'bg-white border-slate-200']">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-sm font-bold flex items-center gap-2" :class="isEditing ? 'text-amber-700' : 'text-slate-800'">
+          <i :class="['fa-solid', isEditing ? 'fa-pen-to-square text-amber-600' : 'fa-plus-circle text-teal-600']"></i>
+          <span>{{ isEditing ? 'تعديل شريحة التمويل المحددة' : 'إضافة شريحة تمويل جديدة' }}</span>
+        </h2>
+        <span v-if="isEditing" class="text-[10px] bg-amber-200 text-amber-800 font-bold px-2.5 py-0.5 rounded-full">
+          جاري التعديل الآن
+        </span>
+      </div>
 
       <form @submit.prevent="saveTier" class="space-y-4 text-xs">
         <div class="grid grid-cols-2 gap-3">
@@ -49,7 +66,7 @@
             <input v-model.number="form.tier_amount" type="number" step="any" required placeholder="مثال: 2000" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white">
           </div>
           <div>
-            <label class="font-bold text-slate-600 block mb-1">تكلفة الآجل الإجمالية</label>
+            <label class="font-bold text-slate-600 block mb-1">كلفة الآجل الإجمالية</label>
             <input v-model.number="form.total_cost" type="number" step="any" required placeholder="مثال: 3162.5" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white">
           </div>
         </div>
@@ -61,7 +78,7 @@
           </div>
           <div>
             <label class="font-bold text-slate-600 block mb-1">عدد أشهر الأقساط اللاحقة</label>
-            <input v-model.number="form.months_count" type="number" min="1" required placeholder="مثال: 3 أو 5" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white">
+            <input v-model.number="form.months_count" type="number" min="1" required placeholder="مثال: 3" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white">
           </div>
           <div>
             <label class="font-bold text-slate-600 block mb-1">يوم الاستحقاق الشهري</label>
@@ -73,7 +90,7 @@
           <button 
             type="submit" 
             :disabled="isSubmitting"
-            class="flex-1 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white font-bold py-3 rounded-xl transition-all shadow flex justify-center items-center gap-2"
+            :class="['flex-1 text-white font-bold py-3 rounded-xl transition-all shadow flex justify-center items-center gap-2', isEditing ? 'bg-amber-600 hover:bg-amber-700' : 'bg-teal-600 hover:bg-teal-700']"
           >
             <i v-if="isSubmitting" class="fa-solid fa-circle-notch fa-spin"></i>
             <span>{{ isSubmitting ? 'جاري الحفظ...' : (isEditing ? 'حفظ التعديلات' : 'إضافة الشريحة لقاعدة البيانات') }}</span>
@@ -85,7 +102,7 @@
             @click="cancelEdit"
             class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-3 rounded-xl transition-all"
           >
-            إلغاء
+            إلغاء التعديل
           </button>
         </div>
       </form>
@@ -118,8 +135,9 @@
             </span>
           </div>
           <div class="flex gap-2">
-            <button @click="editTier(t)" class="text-teal-600 font-bold bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-lg transition-all">
-              تعديل
+            <!-- زر التعديل ينقل بيانات الشريحة إلى النموذج -->
+            <button @click="editTier(t)" class="text-amber-700 font-bold bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition-all border border-amber-200">
+              <i class="fa-solid fa-pen-to-square ml-1"></i> تعديل
             </button>
             <button @click="deleteTier(t.id)" class="text-rose-600 font-bold bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg transition-all">
               حذف
@@ -149,6 +167,7 @@
         const isSubmitting = ref(false);
         const isEditing = ref(false);
         const editingId = ref(null);
+        const toast = ref({ show: false, message: '', type: 'success' });
 
         const form = ref({
           tier_amount: null,
@@ -157,6 +176,11 @@
           months_count: 3,
           due_day: 27
         });
+
+        const showNotification = (msg, type = 'success') => {
+          toast.value = { show: true, message: msg, type };
+          setTimeout(() => { toast.value.show = false; }, 3500);
+        };
 
         const fetchTiers = async () => {
           isLoading.value = true;
@@ -173,45 +197,64 @@
           isLoading.value = false;
         };
 
+        // 1. عند الضغط على زر "تعديل"
+        const editTier = (item) => {
+          isEditing.value = true;
+          editingId.value = item.id;
+          form.value = {
+            tier_amount: item.tier_amount,
+            total_cost: item.total_cost,
+            first_installment: item.first_installment,
+            months_count: item.months_count || 3,
+            due_day: item.due_day || 27
+          };
+          // التمرير لأعلى الصفحة للتركيز على نموذج التعديل
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        // 2. إلغاء التعديل والعودة لوضع الإضافة
+        const cancelEdit = () => {
+          isEditing.value = false;
+          editingId.value = null;
+          form.value = { tier_amount: null, total_cost: null, first_installment: null, months_count: 3, due_day: 27 };
+        };
+
+        // 3. حفظ إما إضافة شريحة جديدة أو تحديث الشريحة المحددة
         const saveTier = async () => {
           isSubmitting.value = true;
           if (supabaseClient) {
+            const payload = {
+              tier_amount: form.value.tier_amount,
+              total_cost: form.value.total_cost,
+              first_installment: form.value.first_installment,
+              months_count: form.value.months_count,
+              due_day: form.value.due_day
+            };
+
             if (isEditing.value) {
-              // تحديث سجل موجود
+              // تنفيذ عملية UPDATE في Supabase باستخدام الـ ID
               const { error } = await supabaseClient
                 .from('user_loans')
-                .update({
-                  tier_amount: form.value.tier_amount,
-                  total_cost: form.value.total_cost,
-                  first_installment: form.value.first_installment,
-                  months_count: form.value.months_count,
-                  due_day: form.value.due_day
-                })
+                .update(payload)
                 .eq('id', editingId.value);
 
               if (error) {
-                alert('خطأ في التعديل: ' + error.message);
+                showNotification('خطأ أثناء التعديل: ' + error.message, 'error');
               } else {
-                alert('✨ تم تحديث الشريحة بنجاح!');
+                showNotification('✨ تم تحديث الشريحة بنجاح!', 'success');
                 cancelEdit();
                 await fetchTiers();
               }
             } else {
-              // إضافة سجل جديد
+              // تنفيذ عملية INSERT لإنشاء سجل جديد
               const { error } = await supabaseClient
                 .from('user_loans')
-                .insert([{
-                  tier_amount: form.value.tier_amount,
-                  total_cost: form.value.total_cost,
-                  first_installment: form.value.first_installment,
-                  months_count: form.value.months_count,
-                  due_day: form.value.due_day
-                }]);
+                .insert([payload]);
 
               if (error) {
-                alert('خطأ في الحفظ: ' + error.message);
+                showNotification('خطأ أثناء الإضافة: ' + error.message, 'error');
               } else {
-                alert('🎉 تمت إضافة الشريحة بنجاح!');
+                showNotification('🎉 تمت إضافة الشريحة بنجاح!', 'success');
                 form.value = { tier_amount: null, total_cost: null, first_installment: null, months_count: 3, due_day: 27 };
                 await fetchTiers();
               }
@@ -220,34 +263,18 @@
           isSubmitting.value = false;
         };
 
-        const editTier = (t) => {
-          isEditing.value = true;
-          editingId.value = t.id;
-          form.value = {
-            tier_amount: t.tier_amount,
-            total_cost: t.total_cost,
-            first_installment: t.first_installment,
-            months_count: t.months_count || 3,
-            due_day: t.due_day || 27
-          };
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        };
-
-        const cancelEdit = () => {
-          isEditing.value = false;
-          editingId.value = null;
-          form.value = { tier_amount: null, total_cost: null, first_installment: null, months_count: 3, due_day: 27 };
-        };
-
         const deleteTier = async (id) => {
-          if (!confirm('هل أنت متأكد من حذف هذه الشريحة؟')) return;
+          if (!confirm('هل أنت متأكد من حذف هذه الشريحة نهائياً؟')) return;
           if (supabaseClient) {
-            const { error } = await supabaseClient.from('user_loans.').delete().eq('id', id); // ملاحظة: الجدول هو user_loans بدون نقطة
-            // للتأكد من اسم الجدول الصحيح:
-            const { error: err2 } = await supabaseClient.from('user_loans').delete().eq('id', id);
-            if (err2) {
-              alert('خطأ في الحذف: ' + err2.message);
+            const { error } = await supabaseClient
+              .from('user_loans')
+              .delete()
+              .eq('id', id);
+
+            if (error) {
+              showNotification('خطأ في الحذف: ' + error.message, 'error');
             } else {
+              showNotification('🗑️ تم حذف الشريحة بنجاح', 'success');
               await fetchTiers();
             }
           }
@@ -263,6 +290,7 @@
           isLoading,
           isSubmitting,
           isEditing,
+          toast,
           saveTier,
           editTier,
           cancelEdit,
