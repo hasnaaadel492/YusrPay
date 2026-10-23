@@ -44,39 +44,39 @@
         إضافة شريحة تمويل جديدة  
       </h2>
 
-      <form @submit.prevent="addTierToSupabase" class="space-y-4 text-xs">
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="font-bold text-slate-600 block mb-1">مبلغ الشريحة (ريال)</label>
-            <input v-model.number="form.tier_amount" type="number" required placeholder="مثال: 3500" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white">
-          </div>
-          <div>
-            <label class="font-bold text-slate-600 block mb-1">كلفة الآجل الإجمالية</label>
-            <input v-model.number="form.total_cost" type="number" required placeholder="مثال: 5000" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white">
-          </div>
-        </div>
+     <form @submit.prevent="addTierToSupabase" class="space-y-4 text-xs">
+  <div class="grid grid-cols-2 gap-3">
+    <div>
+      <label class="font-bold text-slate-600 block mb-1">مبلغ الشريحة (ريال)</label>
+      <input v-model.number="form.tier_amount" type="number" step="any" required placeholder="مثال: 2000" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white">
+    </div>
+    <div>
+      <label class="font-bold text-slate-600 block mb-1">كلفة الآجل الإجمالية</label>
+      <!-- إضافة step="any" هنا تسمح بإدخال الكسور مثل 3162.5 -->
+      <input v-model.number="form.total_cost" type="number" step="any" required placeholder="مثال: 3162.5" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white">
+    </div>
+  </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="font-bold text-slate-600 block mb-1">القسط الأول (استحقاق يوم 27)</label>
-            <input v-model.number="form.first_installment" type="number" required placeholder="مثال: 2000" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white">
-          </div>
-          <div>
-            <label class="font-bold text-slate-600 block mb-1">يوم الاستحقاق الشهري</label>
-            <input v-model.number="form.due_day" type="number" required placeholder="27" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white">
-          </div>
-        </div>
+  <div class="grid grid-cols-2 gap-3">
+    <div>
+      <label class="font-bold text-slate-600 block mb-1">القسط الأول (استحقاق يوم 27)</label>
+      <input v-model.number="form.first_installment" type="number" step="any" required placeholder="مثال: 1350" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white">
+    </div>
+    <div>
+      <label class="font-bold text-slate-600 block mb-1">يوم الاستحقاق الشهري</label>
+      <input v-model.number="form.due_day" type="number" required placeholder="27" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white">
+    </div>
+  </div>
 
-        <!-- Corrected Button Markup -->
-        <button 
-          type="submit" 
-          :disabled="isSubmitting"
-          class="w-full bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white font-bold py-3 rounded-xl transition-all shadow flex justify-center items-center gap-2"
-        >
-          <i v-if="isSubmitting" class="fa-solid fa-circle-notch fa-spin"></i>
-          <span>{{ isSubmitting ? 'جاري الحفظ  ...' : 'حفظ وإرسال لقاعدة البيانات' }}</span>
-        </button>
-      </form>
+  <button 
+    type="submit" 
+    :disabled="isSubmitting"
+    class="w-full bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white font-bold py-3 rounded-xl transition-all shadow flex justify-center items-center gap-2"
+  >
+    <i v-if="isSubmitting" class="fa-solid fa-circle-notch fa-spin"></i>
+    <span>{{ isSubmitting ? 'جاري الحفظ في Supabase...' : 'حفظ وإرسال لقاعدة البيانات' }}</span>
+  </button>
+</form>
     </div>
 
     <!-- Active Tiers Table -->
