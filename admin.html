@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>لوحة التحكم - إدارة شرائح التمويل</title>
+  <title>لوحة التحكم - إدارة شرائح التمويل وطلبات العملاء</title>
   
   <!-- Tailwind CSS & Font Awesome -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -16,26 +16,26 @@
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style> 
     body { font-family: 'Cairo', sans-serif; } 
-    .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+    .fade-enter-active, .modal-fade-leave-active { transition: opacity 0.3s ease; }
     .fade-enter-from, .fade-leave-to { opacity: 0; }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-800 min-h-screen p-4">
+<body class="bg-slate-100 text-slate-800 min-h-screen p-4 pb-12">
 
-  <div id="admin-app" class="max-w-3xl mx-auto space-y-6">
+  <div id="admin-app" class="max-w-4xl mx-auto space-y-6">
     
     <!-- Header -->
     <header class="bg-slate-900 text-white p-4 rounded-2xl flex justify-between items-center shadow-md">
       <div>
         <h1 class="font-bold text-lg flex items-center gap-2">
           <i class="fa-solid fa-user-shield text-amber-400"></i>
-          لوحة إدارة قاعدة البيانات (Supabase Dashboard)
+          لوحة إدارة منصة يُسر (Supabase Dashboard)
         </h1>
-        <p class="text-xs text-slate-400">إضافة، تعديل، وحذف الشرائح وتحديد عدد أشهر الأقساط</p>
+        <p class="text-xs text-slate-400">إدارة شرائح التمويل ومتابعة طلبات السداد الواردة</p>
       </div>
       <span class="bg-emerald-500/20 text-emerald-300 text-xs font-bold px-3 py-1 rounded-full border border-emerald-500/30 flex items-center gap-1">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        مربوط بقاعدة البيانات
+        متصل بقاعدة البيانات
       </span>
     </header>
 
@@ -47,7 +47,7 @@
       </div>
     </transition>
 
-    <!-- Add / Edit Form -->
+    <!-- Add / Edit Tier Form -->
     <div :class="['rounded-2xl p-5 shadow-sm border transition-all', isEditing ? 'bg-amber-50/50 border-amber-200' : 'bg-white border-slate-200']">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-sm font-bold flex items-center gap-2" :class="isEditing ? 'text-amber-700' : 'text-slate-800'">
@@ -117,9 +117,9 @@
         </button>
       </div>
 
-      <div v-if="isLoading" class="text-center py-6 text-xs text-slate-400">
+      <div v-if="isLoadingTiers" class="text-center py-6 text-xs text-slate-400">
         <i class="fa-solid fa-circle-notch fa-spin text-lg block mb-2 text-teal-600"></i>
-        جاري جلب البيانات...
+        جاري جلب الشرائح...
       </div>
 
       <div v-else-if="tiers.length === 0" class="text-center py-6 text-xs text-slate-400 border border-dashed rounded-xl">
@@ -131,11 +131,10 @@
           <div>
             <span class="font-extrabold text-teal-700 text-base ml-2">{{ t.tier_amount }} ريال</span>
             <span class="text-slate-500 text-xs">
-              | الإجمالي: {{ t.total_cost }} ريال | القسط الأول: {{ t.first_installment }} ريال | الأقساط اللاحقة: {{ t.months_count || 3 }} أشهر
+              | الإجمالي: {{ t.total_cost }} ريال | القسط الأول: {{ t.first_installment }} ريال | الأقساط: {{ t.months_count || 3 }} أشهر
             </span>
           </div>
           <div class="flex gap-2">
-            <!-- زر التعديل ينقل بيانات الشريحة إلى النموذج -->
             <button @click="editTier(t)" class="text-amber-700 font-bold bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition-all border border-amber-200">
               <i class="fa-solid fa-pen-to-square ml-1"></i> تعديل
             </button>
@@ -144,6 +143,59 @@
             </button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Customer Loan Requests Section -->
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xs font-bold text-slate-700 flex items-center gap-2">
+          <i class="fa-solid fa-clipboard-list text-teal-600"></i>
+          طلبات السداد والتمويل الواردة من العملاء (loan_requests):
+        </h3>
+        <button @click="fetchLoanRequests" class="text-xs text-teal-600 hover:underline font-bold flex items-center gap-1">
+          <i class="fa-solid fa-rotate"></i> تحديث الطلبات
+        </button>
+      </div>
+
+      <div v-if="isLoadingRequests" class="text-center py-6 text-xs text-slate-400">
+        <i class="fa-solid fa-circle-notch fa-spin text-lg block mb-2 text-teal-600"></i>
+        جاري جلب الطلبات...
+      </div>
+
+      <div v-else-if="loanRequests.length === 0" class="text-center py-6 text-xs text-slate-400 border border-dashed rounded-xl">
+        لا توجد طلبات تمويل واردة حتى الآن.
+      </div>
+
+      <div v-else class="overflow-x-auto">
+        <table class="w-full text-right text-xs border-collapse">
+          <thead>
+            <tr class="bg-slate-50 text-slate-600 border-b">
+              <th class="p-2.5">رقم الطلب</th>
+              <th class="p-2.5">الشريحة</th>
+              <th class="p-2.5">الإجمالي</th>
+              <th class="p-2.5">الأشهر</th>
+              <th class="p-2.5">السداد المبكر</th>
+              <th class="p-2.5">المبلغ النهائي</th>
+              <th class="p-2.5">التاريخ والوقت</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y">
+            <tr v-for="req in loanRequests" :key="req.id" class="hover:bg-slate-50/80">
+              <td class="p-2.5 font-bold text-teal-700">#{{ req.id }}</td>
+              <td class="p-2.5 font-bold">{{ req.tier_amount }} ريال</td>
+              <td class="p-2.5 text-slate-600">{{ req.total_cost }} ريال</td>
+              <td class="p-2.5">{{ req.months_count }} أشهر</td>
+              <td class="p-2.5">
+                <span :class="['px-2 py-0.5 rounded-full text-[10px] font-bold', req.is_early_settlement ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600']">
+                  {{ req.is_early_settlement ? 'نعم (مفعل)' : 'لا' }}
+                </span>
+              </td>
+              <td class="p-2.5 font-extrabold text-slate-800">{{ req.final_amount }} ريال</td>
+              <td class="p-2.5 text-slate-400 text-[11px]">{{ new Date(req.created_at).toLocaleString('ar-SA') }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -163,7 +215,9 @@
     createApp({
       setup() {
         const tiers = ref([]);
-        const isLoading = ref(true);
+        const loanRequests = ref([]);
+        const isLoadingTiers = ref(true);
+        const isLoadingRequests = ref(true);
         const isSubmitting = ref(false);
         const isEditing = ref(false);
         const editingId = ref(null);
@@ -182,8 +236,9 @@
           setTimeout(() => { toast.value.show = false; }, 3500);
         };
 
+        // جلب الشرائح
         const fetchTiers = async () => {
-          isLoading.value = true;
+          isLoadingTiers.value = true;
           if (supabaseClient) {
             const { data, error } = await supabaseClient
               .from('user_loans')
@@ -194,10 +249,25 @@
               tiers.value = data;
             }
           }
-          isLoading.value = false;
+          isLoadingTiers.value = false;
         };
 
-        // 1. عند الضغط على زر "تعديل"
+        // جلب طلبات العملاء من جدول loan_requests
+        const fetchLoanRequests = async () => {
+          isLoadingRequests.value = true;
+          if (supabaseClient) {
+            const { data, error } = await supabaseClient
+              .from('loan_requests')
+              .select('*')
+              .order('created_at', { ascending: false });
+
+            if (!error && data) {
+              loanRequests.value = data;
+            }
+          }
+          isLoadingRequests.value = false;
+        };
+
         const editTier = (item) => {
           isEditing.value = true;
           editingId.value = item.id;
@@ -208,18 +278,15 @@
             months_count: item.months_count || 3,
             due_day: item.due_day || 27
           };
-          // التمرير لأعلى الصفحة للتركيز على نموذج التعديل
           window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        // 2. إلغاء التعديل والعودة لوضع الإضافة
         const cancelEdit = () => {
           isEditing.value = false;
           editingId.value = null;
           form.value = { tier_amount: null, total_cost: null, first_installment: null, months_count: 3, due_day: 27 };
         };
 
-        // 3. حفظ إما إضافة شريحة جديدة أو تحديث الشريحة المحددة
         const saveTier = async () => {
           isSubmitting.value = true;
           if (supabaseClient) {
@@ -232,7 +299,6 @@
             };
 
             if (isEditing.value) {
-              // تنفيذ عملية UPDATE في Supabase باستخدام الـ ID
               const { error } = await supabaseClient
                 .from('user_loans')
                 .update(payload)
@@ -246,7 +312,6 @@
                 await fetchTiers();
               }
             } else {
-              // تنفيذ عملية INSERT لإنشاء سجل جديد
               const { error } = await supabaseClient
                 .from('user_loans')
                 .insert([payload]);
@@ -282,12 +347,15 @@
 
         onMounted(() => {
           fetchTiers();
+          fetchLoanRequests();
         });
 
         return {
           tiers,
+          loanRequests,
           form,
-          isLoading,
+          isLoadingTiers,
+          isLoadingRequests,
           isSubmitting,
           isEditing,
           toast,
@@ -295,7 +363,8 @@
           editTier,
           cancelEdit,
           deleteTier,
-          fetchTiers
+          fetchTiers,
+          fetchLoanRequests
         };
       }
     }).mount('#admin-app');
