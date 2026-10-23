@@ -165,7 +165,7 @@
             class="w-full bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white py-3 rounded-xl font-bold text-sm shadow-md transition-all flex justify-center items-center gap-2"
           >
             <i v-if="isProcessing" class="fa-solid fa-circle-notch fa-spin"></i>
-            <span>{{ isProcessing ? 'جاري توثيق الطلب...' : 'تأكيد ودفع الاستحقاق' }}</span>
+            <span>{{ isProcessing ? 'جاري توثيق الحفظ...' : 'تأكيد ودفع الاستحقاق' }}</span>
           </button>
         </div>
       </template>
@@ -278,7 +278,6 @@
           isLoading.value = false;
         };
 
-        // توليد جدول الأقساط ديناميكياً عند الضغط على الزر
         const openScheduleModal = () => {
           const schedule = [];
           const dueDay = selectedTier.value.dueDay || 27;
@@ -287,7 +286,6 @@
           const totalRem = Number(selectedTier.value.totalCost) - firstInst;
           const monthlyAmt = months > 0 ? (totalRem / months).toFixed(2) : 0;
 
-          // إضافة القسط الأول
           let currentDate = new Date();
           schedule.push({
             title: 'القسط الشامل الأول',
@@ -295,7 +293,6 @@
             dateStr: `يوم ${dueDay} من الشهر الحالي`
           });
 
-          // إضافة الأقساط اللاحقة شهرياً
           for (let i = 1; i <= months; i++) {
             currentDate.setMonth(currentDate.getMonth() + 1);
             const monthName = currentDate.toLocaleString('ar-SA', { month: 'long', year: 'numeric' });
@@ -320,12 +317,31 @@
           return selectedTier.value.earlyNet.toFixed(2);
         });
 
+        // حفظ طلب العميل الفعلي في جدول loan_requests بقاعدة البيانات
         const handlePayment = async () => {
           isProcessing.value = true;
-          setTimeout(() => {
-            isProcessing.value = false;
-            alert(`تم توثيق طلب السداد لشريحة ${selectedTier.value.amount} ريال بنجاح!`);
-          }, 1200);
+          if (supabaseClient) {
+            const requestPayload = {
+              tier_amount: selectedTier.value.amount,
+              total_cost: selectedTier.value.totalCost,
+              first_installment: selectedTier.value.firstInstallment,
+              months_count: selectedTier.value.monthsCount || 3,
+              is_early_settlement: isEarlySettlement.value,
+              final_amount: isEarlySettlement.value ? Number(netEarlySettlement.value) : selectedTier.value.totalCost,
+              status: 'pending'
+            };
+
+            const { error } = await supabaseClient
+              .from('loan_requests')
+              .insert([requestPayload]);
+
+            if (error) {
+              alert('⚠️ خطأ أثناء حفظ الطلب: ' + error.message);
+            } else {
+              alert(`🎉 تم حفظ وتوثيق طلبك لشريحة ${selectedTier.value.amount} ريال في قاعدة البيانات بنجاح!`);
+            }
+          }
+          isProcessing.value = false;
         };
 
         onMounted(() => {
