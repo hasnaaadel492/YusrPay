@@ -9,8 +9,10 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <!-- Vue 3 & Supabase JS -->
+  <!-- Vue 3 CDN -->
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+  <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -60,11 +62,12 @@
             <input v-model.number="form.first_installment" type="number" required placeholder="مثال: 2000" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white">
           </div>
           <div>
-            <label class="font-bold text-slate-600 block mb-1">يوم الاستحقاق الشهرى</label>
+            <label class="font-bold text-slate-600 block mb-1">يوم الاستحقاق الشهري</label>
             <input v-model.number="form.due_day" type="number" required placeholder="27" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white">
           </div>
         </div>
 
+        <!-- Corrected Button Markup -->
         <button 
           type="submit" 
           :disabled="isSubmitting"
@@ -112,10 +115,14 @@
   <script>
     const { createApp, ref, onMounted } = Vue;
 
-    // Supabase Initialization
+    // Supabase Credentials
     const SUPABASE_URL = 'https://kdmlkhlceihidcmwdhxi.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_G5uoFE-wczB6h1YeBAT__g_0ktNT';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    let supabaseClient = null;
+    if (window.supabase && window.supabase.createClient) {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
 
     createApp({
       setup() {
@@ -130,59 +137,60 @@
           due_day: 27
         });
 
-        // 1. جلب الشرائح من جدول user_loans في Supabase
         const fetchTiers = async () => {
           isLoading.value = true;
-          const { data, error } = await supabase
-            .from('user_loans')
-            .select('*')
-            .order('tier_amount', { ascending: true });
+          if (supabaseClient) {
+            const { data, error } = await supabaseClient
+              .from('user_loans')
+              .select('*')
+              .order('tier_amount', { ascending: true });
 
-          if (error) {
-            console.error('خطأ في جلب البيانات:', error.message);
-          } else {
-            tiers.value = data || [];
+            if (!error && data) {
+              tiers.value = data;
+            }
           }
           isLoading.value = false;
         };
 
-        // 2. إضافة شريحة جديدة إلى جدول user_loans في Supabase
         const addTierToSupabase = async () => {
           isSubmitting.value = true;
-          const { data, error } = await supabase
-            .from('user_loans')
-            .insert([
-              {
-                tier_amount: form.value.tier_amount,
-                total_cost: form.value.total_cost,
-                first_installment: form.value.first_installment,
-                due_day: form.value.due_day
-              }
-            ]);
+          if (supabaseClient) {
+            const { error } = await supabaseClient
+              .from('user_loans')
+              .insert([
+                {
+                  tier_amount: form.value.tier_amount,
+                  total_cost: form.value.total_cost,
+                  first_installment: form.value.first_installment,
+                  due_day: form.value.due_day
+                }
+              ]);
 
-          if (error) {
-            alert('حدث خطأ أثناء الحفظ: ' + error.message);
-          } else {
-            alert('تمت إضافة الشريحة إلى قاعدة البيانات بنجاح!');
-            form.value = { tier_amount: null, total_cost: null, first_installment: null, due_day: 27 };
-            await fetchTiers(); // إعادة تحميل القائمة
+            if (error) {
+              alert('حدث خطأ أثناء الحفظ: ' + error.message);
+            } else {
+              alert('تمت إضافة الشريحة بنجاح إلى قاعدة البيانات!');
+              form.value = { tier_amount: null, total_cost: null, first_installment: null, due_day: 27 };
+              await fetchTiers();
+            }
           }
           isSubmitting.value = false;
         };
 
-        // 3. حذف شريحة من Supabase
         const deleteTier = async (id) => {
           if (!confirm('هل أنت متاكد من حذف هذه الشريحة من قاعدة البيانات؟')) return;
 
-          const { error } = await supabase
-            .from('user_loans')
-            .delete()
-            .eq('id', id);
+          if (supabaseClient) {
+            const { error } = await supabaseClient
+              .from('user_loans')
+              .delete()
+              .eq('id', id);
 
-          if (error) {
-            alert('حدث خطأ أثناء الحذف: ' + error.message);
-          } else {
-            await fetchTiers();
+            if (error) {
+              alert('حدث خطأ أثناء الحذف: ' + error.message);
+            } else {
+              await fetchTiers();
+            }
           }
         };
 
