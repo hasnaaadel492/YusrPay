@@ -26,38 +26,40 @@
       background: rgba(255, 255, 255, 0.98);
       border: 1px solid rgba(226, 232, 240, 0.8);
     }
+    .modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.3s ease; }
+    .modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen pb-12">
 
   <div id="app">
-    <!-- Navbar / Header -->
+    <!-- Header -->
     <header class="bg-teal-700 text-white sticky top-0 z-50 shadow-md">
       <div class="max-w-xl mx-auto px-4 py-3 flex justify-between items-center">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-wallet text-2xl text-teal-300"></i>
           <div>
             <h1 class="font-bold text-lg leading-tight">منصة يُسر للتمويل السريع</h1>
-            <p class="text-xs text-teal-100">Frontend Demo</p>
+            <p class="text-xs text-teal-100">Vue.js + Supabase Integration</p>
           </div>
         </div>
 
-        <button @click="installPWA" class="bg-teal-600 hover:bg-teal-500 text-xs px-3 py-1.5 rounded-full font-semibold flex items-center gap-1.5 border border-teal-400 transition-all">
-          <i class="fa-solid fa-download"></i>
-          <span>تثبيت كـ App</span>
+        <button @click="fetchTiersFromSupabase" class="bg-teal-600 hover:bg-teal-500 text-xs px-3 py-1.5 rounded-full font-semibold flex items-center gap-1.5 border border-teal-400 transition-all">
+          <i class="fa-solid fa-rotate"></i>
+          <span>تحديث البيانات</span>
         </button>
       </div>
     </header>
 
     <main class="max-w-xl mx-auto px-4 mt-4 space-y-5">
       
-      <!-- Loading State Banner -->
+      <!-- Loading State -->
       <div v-if="isLoading" class="text-center py-10 bg-white rounded-2xl shadow-sm border">
         <i class="fa-solid fa-circle-notch fa-spin text-2xl text-teal-600 block mb-2"></i>
-        <p class="text-xs text-slate-500 font-bold">جاري تحميل شرائح التمويل المتاحة  ...</p>
+        <p class="text-xs text-slate-500 font-bold">جاري تحميل الشرائح من قاعدة البيانات...</p>
       </div>
 
-      <!-- Main Content (Shows when data is loaded) -->
+      <!-- Main Tiers View -->
       <template v-else-if="tiers.length > 0">
         <!-- Category Selection -->
         <div class="glass-card rounded-2xl p-4 shadow-sm">
@@ -66,7 +68,7 @@
             اختر شريحة التمويل المطلوبة
           </h2>
           
-          <div class="grid grid-cols-5 gap-2">
+          <div class="grid grid-cols-4 gap-2">
             <button 
               v-for="item in tiers" 
               :key="item.amount"
@@ -84,32 +86,41 @@
           </div>
         </div>
 
-        <!-- Financial Calculation Card -->
+        <!-- Financial Breakdown Card -->
         <div class="glass-card rounded-2xl p-5 shadow-sm space-y-4">
           <div class="flex justify-between items-center border-b pb-3 border-slate-100">
             <div>
               <span class="text-xs text-slate-500 block">شريحة التمويل</span>
-              <span class="text-xl font-extrabold text-teal-700">{{ selectedTier.amount || 0 }} ريال</span>
+              <span class="text-xl font-extrabold text-teal-700">{{ selectedTier.amount }} ريال</span>
             </div>
             <div class="text-left">
-              <span class="text-xs text-slate-500 block">تكلفة الآجل القصوى الثابتة</span>
-              <span class="text-base font-bold text-slate-700">{{ formatMoney(selectedTier.totalCost) }} ريال</span>
+              <span class="text-xs text-slate-500 block">كلفة الآجل القصوى الثابتة</span>
+              <span class="text-base font-bold text-slate-700">{{ Number(selectedTier.totalCost).toFixed(2) }} ريال</span>
             </div>
           </div>
 
           <!-- Breakdown Grid -->
           <div class="grid grid-cols-2 gap-3 text-xs">
             <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-              <span class="text-slate-500 block mb-1">القسط الشامل الأول (يوم 27)</span>
-              <span class="font-bold text-slate-800 text-sm">{{ formatMoney(selectedTier.firstInstallment) }} ريال</span>
+              <span class="text-slate-500 block mb-1">القسط الشامل الأول (يوم {{ selectedTier.dueDay }})</span>
+              <span class="font-bold text-slate-800 text-sm">{{ Number(selectedTier.firstInstallment).toFixed(2) }} ريال</span>
             </div>
             <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-              <span class="text-slate-500 block mb-1">الأقساط اللاحقة (27 شهرياً)</span>
+              <span class="text-slate-500 block mb-1">الأقساط اللاحقة</span>
               <span class="font-bold text-slate-800 text-sm">{{ selectedTier.subsequentInstallments }}</span>
             </div>
           </div>
 
-          <!-- Fees Detail -->
+          <!-- Schedule Modal Trigger Button -->
+          <button 
+            @click="openScheduleModal" 
+            class="w-full bg-slate-100 hover:bg-slate-200 text-teal-700 font-bold py-2.5 rounded-xl text-xs transition-all border border-teal-200 flex justify-center items-center gap-2"
+          >
+            <i class="fa-solid fa-calendar-days text-teal-600"></i>
+            <span>عرض جدول استحقاق الأقساط بالتفصيل</span>
+          </button>
+
+          <!-- Fees Details -->
           <div class="bg-teal-50/60 rounded-xl p-3 text-xs space-y-1.5 border border-teal-100">
             <div class="flex justify-between text-teal-900">
               <span>رسوم السند التنفيذي النظامية:</span>
@@ -121,11 +132,11 @@
             </div>
             <div class="flex justify-between text-teal-900">
               <span>موعد السداد المعتمد:</span>
-              <span class="font-bold text-teal-700">يوم 27 من كل شهر ميلادي</span>
+              <span class="font-bold text-teal-700">يوم {{ selectedTier.dueDay }} من كل شهر ميلادي</span>
             </div>
           </div>
 
-          <!-- Early Payment Toggle -->
+          <!-- Early Payment Option -->
           <div class="border-t pt-3 border-slate-100">
             <div class="flex items-center justify-between">
               <label for="earlyPay" class="text-xs font-bold text-slate-700 flex items-center gap-1.5 cursor-pointer">
@@ -147,7 +158,7 @@
             </div>
           </div>
 
-          <!-- Action Button -->
+          <!-- Submit Button -->
           <button 
             @click="handlePayment" 
             :disabled="isProcessing"
@@ -165,12 +176,56 @@
       </div>
 
     </main>
+
+    <!-- Repayment Schedule Modal -->
+    <transition name="modal-fade">
+      <div v-if="showModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-100 space-y-4">
+          <div class="flex justify-between items-center border-b pb-3">
+            <div>
+              <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-calendar-check text-teal-600"></i>
+                جدول استحقاق الأقساط
+              </h3>
+              <p class="text-[11px] text-slate-500">تفاصيل المبالغ ومواعيد السداد للشريحة ({{ selectedTier.amount }} ريال)</p>
+            </div>
+            <button @click="showModal = false" class="text-slate-400 hover:text-slate-700 text-lg">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <!-- Schedule List -->
+          <div class="space-y-2 max-h-64 overflow-y-auto pr-1 text-xs">
+            <div v-for="(inst, index) in generatedSchedule" :key="index" class="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-teal-100 text-teal-700 font-bold flex items-center justify-center text-[10px]">
+                  {{ index + 1 }}
+                </span>
+                <div>
+                  <span class="font-bold text-slate-700 block">{{ inst.title }}</span>
+                  <span class="text-[10px] text-slate-400"><i class="fa-regular fa-clock ml-1"></i>{{ inst.dateStr }}</span>
+                </div>
+              </div>
+              <span class="font-extrabold text-teal-700 text-sm">{{ inst.amount }} ريال</span>
+            </div>
+          </div>
+
+          <div class="bg-amber-50 border border-amber-200 text-amber-900 p-2.5 rounded-xl text-[11px] flex items-center gap-2">
+            <i class="fa-solid fa-triangle-exclamation text-amber-600"></i>
+            <span>يتم سداد الأقساط بانتظام في التاريخ المحدد لكل شهر ميلادي.</span>
+          </div>
+
+          <button @click="showModal = false" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs transition-all">
+            إغلاق الجدول
+          </button>
+        </div>
+      </div>
+    </transition>
   </div>
 
   <script>
     const { createApp, ref, computed, onMounted } = Vue;
 
-    // Supabase Configuration
     const SUPABASE_URL = 'https://kdmlkhlceihidcmwdhxi.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_G5uoFE-wczB6h1YeBAt__g_0ktNTptG';
 
@@ -186,70 +241,91 @@
         const isEarlySettlement = ref(false);
         const isProcessing = ref(false);
         const isLoading = ref(true);
+        const showModal = ref(false);
+        const generatedSchedule = ref([]);
 
-        // تنسيق الأرقام بأمان لتجنب ظهور NaN
-        const formatMoney = (val) => {
-          const num = Number(val);
-          return isNaN(num) ? '0.00' : num.toFixed(2);
+        const fetchTiersFromSupabase = async () => {
+          isLoading.value = true;
+          if (supabaseClient) {
+            const { data, error } = await supabaseClient
+              .from('user_loans')
+              .select('*')
+              .order('tier_amount', { ascending: true });
+
+            if (!error && data && data.length > 0) {
+              tiers.value = data.map(item => {
+                const amount = Number(item.tier_amount) || 0;
+                const totalCost = Number(item.total_cost) || 0;
+                const firstInst = Number(item.first_installment) || 0;
+                const months = Number(item.months_count) || 3;
+                const dueDay = Number(item.due_day) || 27;
+                const remaining = totalCost - firstInst;
+                const monthlyAmount = months > 0 ? (remaining / months).toFixed(2) : '0.00';
+
+                return {
+                  amount: amount,
+                  totalCost: totalCost,
+                  firstInstallment: firstInst,
+                  monthsCount: months,
+                  dueDay: dueDay,
+                  subsequentInstallments: `${monthlyAmount} ريال (${months} أشهر)`,
+                  earlyNet: amount * 1.3
+                };
+              });
+              selectedTier.value = tiers.value[0];
+            }
+          }
+          isLoading.value = false;
         };
 
-        // جلب الشرائح من Supabase
-       const fetchTiersFromSupabase = async () => {
-  isLoading.value = true;
-  if (supabaseClient) {
-    const { data, error } = await supabaseClient
-      .from('user_loans')
-      .select('*')
-      .order('tier_amount', { ascending: true });
+        // توليد جدول الأقساط ديناميكياً عند الضغط على الزر
+        const openScheduleModal = () => {
+          const schedule = [];
+          const dueDay = selectedTier.value.dueDay || 27;
+          const firstInst = Number(selectedTier.value.firstInstallment) || 0;
+          const months = Number(selectedTier.value.monthsCount) || 3;
+          const totalRem = Number(selectedTier.value.totalCost) - firstInst;
+          const monthlyAmt = months > 0 ? (totalRem / months).toFixed(2) : 0;
 
-    if (error) {
-      console.error('Error loading tiers:', error.message);
-    } else if (data && data.length > 0) {
-      tiers.value = data.map(item => {
-        const amount = Number(item.tier_amount) || 0;
-        const totalCost = Number(item.total_cost) || 0;
-        const firstInst = Number(item.first_installment) || 0;
-        
-        // قراءة عدد الأشهر الديناميكي من قاعدة البيانات (مع افتراض 3 إذا لم تحدد)
-        const months = Number(item.months_count) || 3;
-        const remaining = totalCost - firstInst;
-        const monthlyAmount = months > 0 ? (remaining / months).toFixed(2) : '0.00';
+          // إضافة القسط الأول
+          let currentDate = new Date();
+          schedule.push({
+            title: 'القسط الشامل الأول',
+            amount: firstInst.toFixed(2),
+            dateStr: `يوم ${dueDay} من الشهر الحالي`
+          });
 
-        return {
-          amount: amount,
-          totalCost: totalCost,
-          firstInstallment: firstInst,
-          monthsCount: months,
-          // صياغة النص ديناميكياً بحسب عدد الأشهر المدخل في لوحة التحكم
-          subsequentInstallments: `${monthlyAmount} ريال (${months} أشهر)`,
-          earlyNet: amount * 1.3
+          // إضافة الأقساط اللاحقة شهرياً
+          for (let i = 1; i <= months; i++) {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            const monthName = currentDate.toLocaleString('ar-SA', { month: 'long', year: 'numeric' });
+            schedule.push({
+              title: `القسط اللاحق (رقم ${i})`,
+              amount: monthlyAmt,
+              dateStr: `يوم ${dueDay} ${monthName}`
+            });
+          }
+
+          generatedSchedule.value = schedule;
+          showModal.value = true;
         };
-      });
-      selectedTier.value = tiers.value[0];
-    }
-  }
-  isLoading.value = false;
-};
+
         const discountAmount = computed(() => {
-          const total = Number(selectedTier.value.totalCost) || 0;
-          const early = Number(selectedTier.value.earlyNet) || 0;
-          return formatMoney(total - early);
+          if (!selectedTier.value.totalCost) return '0.00';
+          return (selectedTier.value.totalCost - selectedTier.value.earlyNet).toFixed(2);
         });
 
         const netEarlySettlement = computed(() => {
-          return formatMoney(selectedTier.value.earlyNet);
+          if (!selectedTier.value.earlyNet) return '0.00';
+          return selectedTier.value.earlyNet.toFixed(2);
         });
 
         const handlePayment = async () => {
           isProcessing.value = true;
           setTimeout(() => {
             isProcessing.value = false;
-            alert(`تم تسجيل طلب السداد لشريحة ${selectedTier.value.amount} ريال بنجاح!`);
+            alert(`تم توثيق طلب السداد لشريحة ${selectedTier.value.amount} ريال بنجاح!`);
           }, 1200);
-        };
-
-        const installPWA = () => {
-          alert("تطبيق الـ PWA جاهز! قم بالنقر على قائمة المتصفح واختيار 'إضافة إلى الشاشة الرئيسية'.");
         };
 
         onMounted(() => {
@@ -264,9 +340,11 @@
           netEarlySettlement,
           isProcessing,
           isLoading,
-          formatMoney,
-          handlePayment,
-          installPWA
+          showModal,
+          generatedSchedule,
+          openScheduleModal,
+          fetchTiersFromSupabase,
+          handlePayment
         };
       }
     }).mount('#app');
