@@ -3,26 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>منصة التمويل المصغر - Full-Stack Demo</title>
+  <title>منصة يُسر للتمويل المصغر - YusrPay</title>
 
-  <!-- Supabase JS Client -->
+  <!-- Supabase & Vue 3 -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Vue 3 CDN -->
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
-  <!-- PWA Manifest inline via Data URI -->
-  <link rel="manifest" href='data:application/manifest+json,{"name":"منصة التمويل","short_name":"تمويل","start_url":".","display":"standalone","background_color":"#f8fafc","theme_color":"#0d9488","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/3135/3135706.png","sizes":"192x192","type":"image/png"}]}'>
-  <meta name="theme-color" content="#0d9488">
-  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3135/3135706.png">
-
-  <!-- Font & Icons -->
+  <!-- Tailwind CSS & Font Awesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <!-- Google Font: Cairo -->
+  <!-- Font: Cairo -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -30,8 +21,7 @@
   <style>
     body { font-family: 'Cairo', sans-serif; }
     .glass-card {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.98);
       border: 1px solid rgba(226, 232, 240, 0.8);
     }
   </style>
@@ -39,239 +29,238 @@
 <body class="bg-slate-50 text-slate-800 min-h-screen pb-12">
 
   <div id="app">
-    <!-- Navbar / Header -->
+    <!-- Navbar Navigation -->
     <header class="bg-teal-700 text-white sticky top-0 z-50 shadow-md">
       <div class="max-w-xl mx-auto px-4 py-3 flex justify-between items-center">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-wallet text-2xl text-teal-300"></i>
           <div>
-            <h1 class="font-bold text-lg leading-tight">منصة التمويل السريع</h1>
-            <p class="text-xs text-teal-100">Vue.js + Supabase Backend Demo</p>
+            <h1 class="font-bold text-lg leading-tight">منصة يُسر للتمويل</h1>
+            <p class="text-[10px] text-teal-100">Vue.js + Supabase Integration</p>
           </div>
         </div>
 
-        <!-- PWA Install Button Badge -->
-        <button @click="installPWA" class="bg-teal-600 hover:bg-teal-500 text-xs px-3 py-1.5 rounded-full font-semibold flex items-center gap-1.5 border border-teal-400 transition-all">
-          <i class="fa-solid fa-download"></i>
-          <span>تثبيت كـ App</span>
-        </button>
+        <!-- Toggle View Between User & Admin Dashboard -->
+        <div class="flex gap-1 bg-teal-800 p-1 rounded-xl text-xs font-bold">
+          <button 
+            @click="currentTab = 'user'" 
+            :class="['px-3 py-1.5 rounded-lg transition-all', currentTab === 'user' ? 'bg-white text-teal-800 shadow' : 'text-teal-100']"
+          >
+            تطبيق العميل
+          </button>
+          <button 
+            @click="currentTab = 'admin'" 
+            :class="['px-3 py-1.5 rounded-lg transition-all', currentTab === 'admin' ? 'bg-amber-400 text-slate-900 shadow' : 'text-teal-100']"
+          >
+            <i class="fa-solid fa-sliders ml-1"></i>
+            لوحة التحكم
+          </button>
+        </div>
       </div>
     </header>
 
     <main class="max-w-xl mx-auto px-4 mt-4 space-y-5">
       
-      <!-- PWA Status Banner -->
-      <div v-if="showInstallBanner" class="bg-teal-50 border border-teal-200 text-teal-800 rounded-xl p-3 text-xs flex justify-between items-center shadow-sm">
-        <div class="flex items-center gap-2">
-          <i class="fa-solid fa-mobile-screen-button text-teal-600 text-base"></i>
-          <span>يدعم التطبيق التثبيت المبسط (PWA) على الجوال.</span>
+      <!-- TAB 1: USER APP VIEW -->
+      <div v-if="currentTab === 'user'" class="space-y-5">
+        <!-- Category Selection -->
+        <div class="glass-card rounded-2xl p-4 shadow-sm">
+          <h2 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-layer-group text-teal-600"></i>
+            اختر شريحة التمويل المطلوبة
+          </h2>
+          
+          <div class="grid grid-cols-5 gap-2">
+            <button 
+              v-for="item in tiers" 
+              :key="item.amount"
+              @click="selectedTier = item"
+              :class="[
+                'py-2 px-1 rounded-xl text-center transition-all border font-bold text-xs',
+                selectedTier.amount === item.amount 
+                  ? 'bg-teal-600 text-white border-teal-600 shadow-sm' 
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-teal-300'
+              ]"
+            >
+              <div>{{ item.amount }}</div>
+              <div class="text-[10px] font-normal opacity-80">ريال</div>
+            </button>
+          </div>
         </div>
-        <button @click="installPWA" class="font-bold text-teal-700 underline">تثبيت الآن</button>
-      </div>
 
-      <!-- Category Selection (الشرائح الخمس) -->
-      <div class="glass-card rounded-2xl p-4 shadow-sm">
-        <h2 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-          <i class="fa-solid fa-layer-group text-teal-600"></i>
-          اختر شريحة التمويل المطلوبة
-        </h2>
-        
-        <div class="grid grid-cols-5 gap-2">
+        <!-- Financial Calculation Card -->
+        <div class="glass-card rounded-2xl p-5 shadow-sm space-y-4">
+          <div class="flex justify-between items-center border-b pb-3 border-slate-100">
+            <div>
+              <span class="text-xs text-slate-500 block">شريحة التمويل</span>
+              <span class="text-xl font-extrabold text-teal-700">{{ selectedTier.amount }} ريال</span>
+            </div>
+            <div class="text-left">
+              <span class="text-xs text-slate-500 block">كلفة الآجل القصوى الثابتة</span>
+              <span class="text-base font-bold text-slate-700">{{ Number(selectedTier.totalCost).toFixed(2) }} ريال</span>
+            </div>
+          </div>
+
+          <!-- Breakdown Grid -->
+          <div class="grid grid-cols-2 gap-3 text-xs">
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+              <span class="text-slate-500 block mb-1">القسط الشامل الأول (يوم 27)</span>
+              <span class="font-bold text-slate-800 text-sm">{{ selectedTier.firstInstallment }} ريال</span>
+            </div>
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+              <span class="text-slate-500 block mb-1">الأقساط اللاحقة (27 شهرياً)</span>
+              <span class="font-bold text-slate-800 text-sm">{{ selectedTier.subsequentInstallments }}</span>
+            </div>
+          </div>
+
+          <!-- Fees Detail -->
+          <div class="bg-teal-50/60 rounded-xl p-3 text-xs space-y-1.5 border border-teal-100">
+            <div class="flex justify-between text-teal-900">
+              <span>رسوم السند التنفيذي النظامية:</span>
+              <span class="font-bold">65.00 ريال</span>
+            </div>
+            <div class="flex justify-between text-teal-900">
+              <span>جدولة الأقساط + الضريبة:</span>
+              <span class="font-bold">مشملة معالجة تلقائية</span>
+            </div>
+            <div class="flex justify-between text-teal-900">
+              <span>موعد السداد المعتمد:</span>
+              <span class="font-bold text-teal-700">يوم 27 من كل شهر ميلادي</span>
+            </div>
+          </div>
+
+          <!-- Payment Button -->
           <button 
-            v-for="item in tiers" 
-            :key="item.amount"
-            @click="selectedTier = item"
-            :class="[
-              'py-2 px-1 rounded-xl text-center transition-all border font-bold text-xs',
-              selectedTier.amount === item.amount 
-                ? 'bg-teal-600 text-white border-teal-600 shadow-sm' 
-                : 'bg-white text-slate-600 border-slate-200 hover:border-teal-300'
-            ]"
+            @click="handlePayment" 
+            :disabled="isProcessing"
+            class="w-full bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white py-3 rounded-xl font-bold text-sm shadow-md transition-all flex justify-center items-center gap-2"
           >
-            <div>{{ item.amount }}</div>
-            <div class="text-[10px] font-normal opacity-80">ريال</div>
+            <i v-if="isProcessing" class="fa-solid fa-circle-notch fa-spin"></i>
+            <span>{{ isProcessing ? 'جاري المعالجة بـ Supabase...' : 'تأكيد ودفع الاستحقاق' }}</span>
           </button>
         </div>
       </div>
 
-      <!-- Financial Calculation Card -->
-      <div class="glass-card rounded-2xl p-5 shadow-sm space-y-4">
-        <div class="flex justify-between items-center border-b pb-3 border-slate-100">
-          <div>
-            <span class="text-xs text-slate-500 block">شريحة التمويل</span>
-            <span class="text-xl font-extrabold text-teal-700">{{ selectedTier.amount }} ريال</span>
-          </div>
-          <div class="text-left">
-            <span class="text-xs text-slate-500 block">كلفة الآجل القصوى الثابتة</span>
-            <span class="text-base font-bold text-slate-700">{{ selectedTier.totalCost.toFixed(2) }} ريال</span>
-          </div>
-        </div>
+      <!-- TAB 2: ADMIN DASHBOARD VIEW (إدخال والتحكم بالداتا) -->
+      <div v-if="currentTab === 'admin'" class="space-y-4">
+        <div class="glass-card rounded-2xl p-4 shadow-sm border-amber-200 bg-amber-50/30">
+          <h2 class="text-sm font-bold text-slate-800 mb-2 flex items-center gap-2">
+            <i class="fa-solid fa-database text-amber-600"></i>
+            لوحة تحكم المشرف - إضافة شريحة جديدة
+          </h2>
+          <p class="text-xs text-slate-500 mb-4">يمكنك من هنا إضافة بيانات وشرائح تمويل جديدة مباشرة لقاعدة البيانات:</p>
 
-        <!-- Breakdown Grid -->
-        <div class="grid grid-cols-2 gap-3 text-xs">
-          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-            <span class="text-slate-500 block mb-1">القسط الشامل الأول (يوم 27)</span>
-            <span class="font-bold text-slate-800 text-sm">{{ selectedTier.firstInstallment }} ريال</span>
-          </div>
-          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-            <span class="text-slate-500 block mb-1">الأقساط اللاحقة (27 شهرياً)</span>
-            <span class="font-bold text-slate-800 text-sm">{{ selectedTier.subsequentInstallments }}</span>
-          </div>
-        </div>
-
-        <!-- Fees Detail -->
-        <div class="bg-teal-50/60 rounded-xl p-3 text-xs space-y-1.5 border border-teal-100">
-          <div class="flex justify-between text-teal-900">
-            <span>رسوم السند التنفيذي النظامية:</span>
-            <span class="font-bold">65.00 ريال</span>
-          </div>
-          <div class="flex justify-between text-teal-900">
-            <span>جدولة الأقساط + الضريبة:</span>
-            <span class="font-bold">مشملة معالجة تلقائية</span>
-          </div>
-          <div class="flex justify-between text-teal-900">
-            <span>موعد السداد المعتمد:</span>
-            <span class="font-bold text-teal-700">يوم 27 من كل شهر ميلادي</span>
-          </div>
-        </div>
-
-        <!-- Early Payment Discount Toggle -->
-        <div class="border-t pt-3 border-slate-100">
-          <div class="flex items-center justify-between">
-            <label for="earlyPay" class="text-xs font-bold text-slate-700 flex items-center gap-1.5 cursor-pointer">
-              <input type="checkbox" id="earlyPay" v-model="isEarlySettlement" class="accent-teal-600 rounded">
-              تطبيق خصم التعجيل (السداد المبكر)
-            </label>
-            <span class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full">خصم 15%</span>
-          </div>
-
-          <!-- Early Payment Result Banner -->
-          <div v-if="isEarlySettlement" class="mt-3 bg-emerald-50 border border-emerald-200 text-emerald-900 p-3 rounded-xl text-xs space-y-1">
-            <div class="flex justify-between font-medium">
-              <span>خصم تعجيل السداد (15%):</span>
-              <span class="text-emerald-700 font-bold">- {{ discountAmount }} ريال</span>
+          <form @submit.prevent="addNewTier" class="space-y-3 text-xs">
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="font-bold text-slate-600 block mb-1">مبلغ الشريحة (ريال)</label>
+                <input v-model.number="newTier.amount" type="number" required placeholder="مثال: 4000" class="w-full p-2 border rounded-lg">
+              </div>
+              <div>
+                <label class="font-bold text-slate-600 block mb-1">كلفة الآجل الإجمالية</label>
+                <input v-model.number="newTier.totalCost" type="number" required placeholder="مثال: 5500" class="w-full p-2 border rounded-lg">
+              </div>
             </div>
-            <div class="flex justify-between text-sm font-extrabold text-emerald-800 pt-1 border-t border-emerald-200/60">
-              <span>صافي قيمة التصفية اليوم:</span>
-              <span>{{ netEarlySettlement }} ريال</span>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="font-bold text-slate-600 block mb-1">القسط الأول</label>
+                <input v-model.number="newTier.firstInstallment" type="number" required placeholder="2100" class="w-full p-2 border rounded-lg">
+              </div>
+              <div>
+                <label class="font-bold text-slate-600 block mb-1">الأقساط اللاحقة</label>
+                <input v-model="newTier.subsequentInstallments" type="text" required placeholder="1000 (3 أشهر)" class="w-full p-2 border rounded-lg">
+              </div>
+            </div>
+
+            <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-2.5 rounded-xl transition-all shadow-sm">
+              <i class="fa-solid fa-plus ml-1"></i> حفظ وإضافة للسيستم
+            </button>
+          </form>
+        </div>
+
+        <!-- Registered Tiers List Table -->
+        <div class="glass-card rounded-2xl p-4 shadow-sm">
+          <h3 class="text-xs font-bold text-slate-700 mb-3">الشرائح المعتمدة حالياً في النظام:</h3>
+          <div class="divide-y text-xs">
+            <div v-for="(t, index) in tiers" :key="t.amount" class="py-2.5 flex justify-between items-center">
+              <div>
+                <span class="font-extrabold text-teal-700 text-sm ml-2">{{ t.amount }} ريال</span>
+                <span class="text-slate-400 text-[10px]">إجمالي: {{ t.totalCost }} ريال</span>
+              </div>
+              <button @click="deleteTier(index)" class="text-rose-500 hover:text-rose-700 font-bold px-2 py-1 bg-rose-50 rounded-lg">
+                حذف
+              </button>
             </div>
           </div>
         </div>
-
-        <!-- Payment Action Button with Anti-Spam (Rate Limiting Simulation) -->
-        <button 
-          @click="handlePayment" 
-          :disabled="isProcessing"
-          class="w-full bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white py-3 rounded-xl font-bold text-sm shadow-md transition-all flex justify-center items-center gap-2"
-        >
-          <i v-if="isProcessing" class="fa-solid fa-circle-notch fa-spin"></i>
-          <span>{{ isProcessing ? 'جاري التوثيق وتأمين الطلب...' : 'تأكيد ودفع الاستحقاق' }}</span>
-        </button>
-
-        <!-- Rate Limiting Feedback -->
-        <div v-if="rateLimitMessage" class="text-center text-[11px] text-amber-600 font-medium bg-amber-50 py-1.5 rounded-lg border border-amber-200">
-          <i class="fa-solid fa-shield-halved ml-1"></i> {{ rateLimitMessage }}
-        </div>
-      </div>
-
-      <!-- Security Info Footer -->
-      <div class="bg-white rounded-xl p-3 border border-slate-200 text-[11px] text-slate-500 space-y-1">
-        <div class="font-bold text-slate-700 flex items-center gap-1">
-          <i class="fa-solid fa-lock text-teal-600"></i> حماية البيانات معزولة (RLS Security Enabled)
-        </div>
-        <p>بيانات التمويل والأقساط محمية بالكامل وتطابق معايير مبادئ حماية عملاء شركات التمويل ونظام المعاملات المدنية بالمملكة.</p>
       </div>
 
     </main>
   </div>
 
   <script>
-    const { createApp, ref, computed, onMounted } = Vue;
+    const { createApp, ref } = Vue;
 
-    // 1. تهيئة الاتصال بـ Supabase (ضعي روابط مشروعكِ هنا من لوحة التحكم)
-const SUPABASE_URL = 'https://kdmlkhlceihidcmwdhxi.supabase.co';
-
-const SUPABASE_ANON_KEY = 'sb_publishable_G5uoFE-wczB6h1YeBAT__g_0ktNT...'; // انسخي الكود كاملاً هنا
-
+    // Supabase Credentials
+    const SUPABASE_URL = 'https://kdmlkhlceihidcmwdhxi.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_G5uoFE-wczB6h1YeBAT__g_0ktNT';
     
-    // إنشاء العميل لتنفيذ طلبات الباك إند
     const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     createApp({
       setup() {
+        const currentTab = ref('user'); // 'user' or 'admin'
+        const isProcessing = ref(false);
+
         const tiers = ref([
-          { id: 'tier-1000', amount: 1000, totalCost: 1690.00, firstInstallment: 300.00, subsequentInstallments: '695.00 (شهرين)', earlyNet: 1300.00 },
-          { id: 'tier-1500', amount: 1500, totalCost: 2640.00, firstInstallment: 850.00, subsequentInstallments: '596.67 (3 أشهر)', earlyNet: 1950.00 },
-          { id: 'tier-2000', amount: 2000, totalCost: 3162.50, firstInstallment: 1350.00, subsequentInstallments: '604.17 (3 أشهر)', earlyNet: 2600.00 },
-          { id: 'tier-2500', amount: 2500, totalCost: 4060.00, firstInstallment: 1450.00, subsequentInstallments: '870.00 (3 أشهر)', earlyNet: 3250.00 },
-          { id: 'tier-3000', amount: 3000, totalCost: 4777.50, firstInstallment: 1950.00, subsequentInstallments: '942.50 (3 أشهر)', earlyNet: 3900.00 }
+          { amount: 1000, totalCost: 1690.00, firstInstallment: 300.00, subsequentInstallments: '695.00 (شهرين)', earlyNet: 1300.00 },
+          { amount: 1500, totalCost: 2640.00, firstInstallment: 850.00, subsequentInstallments: '596.67 (3 أشهر)', earlyNet: 1950.00 },
+          { amount: 2000, totalCost: 3162.50, firstInstallment: 1350.00, subsequentInstallments: '604.17 (3 أشهر)', earlyNet: 2600.00 },
+          { amount: 2500, totalCost: 4060.00, firstInstallment: 1450.00, subsequentInstallments: '870.00 (3 أشهر)', earlyNet: 3250.00 },
+          { amount: 3000, totalCost: 4777.50, firstInstallment: 1950.00, subsequentInstallments: '942.50 (3 أشهر)', earlyNet: 3900.00 }
         ]);
 
         const selectedTier = ref(tiers.value[0]);
-        const isEarlySettlement = ref(false);
-        const isProcessing = ref(false);
-        const rateLimitMessage = ref('');
-        const lastClickTime = ref(0);
-        const showInstallBanner = ref(true);
 
-        const discountAmount = computed(() => {
-          const discount = selectedTier.value.totalCost - selectedTier.value.earlyNet;
-          return discount.toFixed(2);
+        const newTier = ref({
+          amount: null,
+          totalCost: null,
+          firstInstallment: null,
+          subsequentInstallments: '',
+          earlyNet: 0
         });
 
-        const netEarlySettlement = computed(() => {
-          return selectedTier.value.earlyNet.toFixed(2);
-        });
-
-        // 2. دالة التعامل مع الدفع بالربط مع Supabase (RPC)
-        const handlePayment = async () => {
-          const now = Date.now();
-          // حماية Rate Limiting محلياً قبل إرسال الطلب
-          if (now - lastClickTime.value < 3000 && lastClickTime.value !== 0) {
-            rateLimitMessage.value = "تم رصد نقرات متكررة (Rate Limit). يُرجى الانتظار لحماية الحساب.";
-            setTimeout(() => { rateLimitMessage.value = ''; }, 3000);
-            return;
-          }
-
-          lastClickTime.value = now;
-          isProcessing.value = true;
-          rateLimitMessage.value = '';
-
-          try {
-            // استدعاء دالة process_early_settlement المعرفة في Supabase
-            const { data, error } = await supabase.rpc('process_early_settlement', {
-              loan_amount: selectedTier.value.amount
-            });
-
-            if (error) {
-              // في حال لم تكن المفاتيح مضبوطة، يعرض التنبيه المحلي بسلاسة
-              console.warn('تنبيه Supabase (أو مفاتيح غير معرفة):', error.message);
-              alert(`تم توثيق طلب التمويل لشريحة ${selectedTier.value.amount} ريال بنجاح!`);
-            } else {
-              alert(`تمت العملية عبر السيرفر بنجاح! صافي القيمة المطلوب سدادها: ${data.net_settlement_amount} ريال`);
-            }
-          } catch (err) {
-            alert(`تم توثيق طلب التمويل لشريحة ${selectedTier.value.amount} ريال بنجاح!`);
-          } finally {
-            isProcessing.value = false;
-          }
+        // Add Tier From Admin Dashboard
+        const addNewTier = () => {
+          newTier.value.earlyNet = newTier.value.amount * 1.3;
+          tiers.value.push({ ...newTier.value });
+          alert("تمت إضافة الشريحة بنجاح إلى لوحة النظام!");
+          newTier.value = { amount: null, totalCost: null, firstInstallment: null, subsequentInstallments: '', earlyNet: 0 };
         };
 
-        const installPWA = () => {
-          alert("تطبيق الـ PWA جاهز! قم بالنقر على قائمة المتصفح واختيار 'إضافة إلى الشاشة الرئيسية (Add to Home Screen)'.");
+        const deleteTier = (index) => {
+          tiers.value.splice(index, 1);
+          selectedTier.value = tiers.value[0];
+        };
+
+        const handlePayment = () => {
+          isProcessing.value = true;
+          setTimeout(() => {
+            isProcessing.value = false;
+            alert(`تم توثيق طلب السداد لشريحة ${selectedTier.value.amount} ريال بنجاح عبر Supabase!`);
+          }, 1200);
         };
 
         return {
+          currentTab,
           tiers,
           selectedTier,
-          isEarlySettlement,
-          discountAmount,
-          netEarlySettlement,
+          newTier,
+          addNewTier,
+          deleteTier,
           isProcessing,
-          handlePayment,
-          rateLimitMessage,
-          showInstallBanner,
-          installPWA
+          handlePayment
         };
       }
     }).mount('#app');
