@@ -27,9 +27,9 @@
       <div>
         <h1 class="font-bold text-lg flex items-center gap-2">
           <i class="fa-solid fa-user-shield text-amber-400"></i>
-          لوحة إدارة قاعدة البيانات (Supabase Dashboard)
+          لوحة إدارة قاعدة البيانات ( Dashboard)
         </h1>
-        <p class="text-xs text-slate-400">إدارة شرائح التمويل والأقساط حياً عبر Supabase</p>
+        <p class="text-xs text-slate-400">إدارة شرائح التمويل والأقساط حياً  </p>
       </div>
       <span class="bg-emerald-500/20 text-emerald-300 text-xs font-bold px-3 py-1 rounded-full border border-emerald-500/30 flex items-center gap-1">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -41,7 +41,7 @@
     <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
       <h2 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
         <i class="fa-solid fa-plus-circle text-teal-600"></i>
-        إضافة شريحة تمويل جديدة إلى Supabase
+        إضافة شريحة تمويل جديدة  
       </h2>
 
       <form @submit.prevent="addTierToSupabase" class="space-y-4 text-xs">
@@ -74,7 +74,7 @@
           class="w-full bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white font-bold py-3 rounded-xl transition-all shadow flex justify-center items-center gap-2"
         >
           <i v-if="isSubmitting" class="fa-solid fa-circle-notch fa-spin"></i>
-          <span>{{ isSubmitting ? 'جاري الحفظ في Supabase...' : 'حفظ وإرسال لقاعدة البيانات' }}</span>
+          <span>{{ isSubmitting ? 'جاري الحفظ  ...' : 'حفظ وإرسال لقاعدة البيانات' }}</span>
         </button>
       </form>
     </div>
@@ -82,7 +82,7 @@
     <!-- Active Tiers Table -->
     <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-xs font-bold text-slate-700">الشرائح المسجلة حالياً في Supabase:</h3>
+        <h3 class="text-xs font-bold text-slate-700">الشرائح المسجلة حالياً  :</h3>
         <button @click="fetchTiers" class="text-xs text-teal-600 hover:underline font-bold flex items-center gap-1">
           <i class="fa-solid fa-rotate"></i> تحديث البيانات
         </button>
