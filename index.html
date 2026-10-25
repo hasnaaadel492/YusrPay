@@ -8,6 +8,13 @@
   <link rel="icon" type="image/jpeg" href="mohla.jpg">
   <link rel="apple-touch-icon" href="mohla.jpg">
 
+
+<!-- لون شريط الحالة فوق الهيدر في الآيفون -->
+<meta name="theme-color" content="#0d6e6e">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="منصة مهلة">
+
   <!-- Tailwind CSS & Font Awesome -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -31,7 +38,9 @@
     }
     .modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.3s ease; }
     .modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
-    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
     @media print {
       body * { visibility: hidden; }
       #printable-receipt, #printable-receipt * { visibility: visible; }
@@ -49,6 +58,35 @@
 <body class="bg-slate-50 text-slate-800 min-h-screen pb-12">
 
   <div id="app">
+
+    <!-- splash screen -->
+     <div id="pwa-splash-screen" style="
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background-color: #0d6e6e;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-family: system-ui, -apple-system, sans-serif;
+  ">
+    <!-- صورة لوجو الموقع -->
+    <img src="mohla.jpg" alt="منصة مهلة" style="width: 120px; height: auto; margin-bottom: 24px; animate: pulse 1.5s infinite;" />
+    
+    <!-- مؤشر تحميل بسيط أنيق (Spinner) -->
+    <div style="
+      width: 32px;
+      height: 32px;
+      border: 3px solid rgba(255, 255, 255, 0.2);
+      border-top-color: #fbbf24; /* اللون الأصفر من أزرار موقعك */
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    "></div>
+  </div>
+
+
     <!-- Header -->
     <header class="bg-teal-800 text-white sticky top-0 z-50 shadow-md no-print">
       <div class="max-w-xl mx-auto px-4 py-3 flex justify-between items-center">
@@ -422,6 +460,15 @@
 
         onMounted(() => {
           fetchTiersFromSupabase();
+          // إخفاء الـ Splash Screen فور تجهيز التطبيق
+  const splash = document.getElementById('pwa-splash-screen');
+  if (splash) {
+    splash.style.transition = 'opacity 0.4s ease';
+    splash.style.opacity = '0';
+    setTimeout(() => {
+      splash.remove();
+    }, 400);
+  }
         });
 
         return {
@@ -444,5 +491,7 @@
       }
     }).mount('#app');
   </script>
+
+  
 </body>
 </html>
