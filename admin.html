@@ -478,11 +478,14 @@
         };
 
       const saveTier = async () => {
-  // التحقق من عدم تكرار مبلغ الشريحة عند الإضافة الجديدة
+ // التحقق من عدم تكرار نفس مبلغ الشريحة مع نفس عدد الأشهر (المسار) عند الإضافة الجديدة
   if (!isEditing.value) {
-    const exists = tiers.value.some(t => t.tier_amount === form.value.tier_amount);
+    const exists = tiers.value.some(t => 
+      Number(t.tier_amount) === Number(form.value.tier_amount) && 
+      Number(t.months_count) === Number(form.value.months_count)
+    );
     if (exists) {
-      showNotification('⚠️ هذه الشريحة موجودة مسبقاً! يرجى تعديلها بدلاً من إضافتها مجدداً.', 'error');
+      showNotification('⚠️ هذا المسار (نفس مبلغ الشريحة ونفس عدد الأشهر) موجود مسبقاً!', 'error');
       return;
     }
   }
