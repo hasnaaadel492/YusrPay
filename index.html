@@ -131,7 +131,7 @@
           
           <div class="hidden print:block text-center border-b pb-4 mb-4">
             <h2 class="text-xl font-bold text-teal-800">منصة مُهْلَة الرقمية - ملخص طلب التمويل</h2>
-            <p class="text-xs text-slate-500">تاريخ الطلب: {{ new Date().toLocaleDateString('ar-SA') }}</p>
+            <p class="text-xs text-slate-500">تاريخ الطلب: {{ formattedCurrentDate }}</p>
           </div>
 
           <div class="flex justify-between items-center border-b pb-3 border-slate-100">
@@ -268,7 +268,7 @@
   </div>
 
   <script>
-    const { createApp, ref, onMounted } = Vue;
+    const { createApp, ref, computed, onMounted } = Vue;
 
     const SUPABASE_URL = 'https://kdmlkhlceihidcmwdhxi.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_G5uoFE-wczB6h1YeBAt__g_0ktNTptG';
@@ -288,6 +288,15 @@
         const isLoading = ref(true);
         const showModal = ref(false);
         const generatedSchedule = ref([]);
+
+        // تاريخ اليوم ميلادي ثابت حصراً
+     const formattedCurrentDate = computed(() => {
+          const d = new Date();
+          const day = String(d.getDate()).padStart(2, '0');
+          const month = String(d.getMonth() + 1).padStart(2, '0');
+          const year = d.getFullYear();
+          return `${year}/${month}/${day}`;
+        });
 
         // تحديث تاريخ الاستحقاق آلياً بناءً على القطاع
         const updateDueDay = () => {
@@ -355,11 +364,13 @@
 
           for (let i = 1; i <= months; i++) {
             currentDate.setMonth(currentDate.getMonth() + 1);
-            const monthName = currentDate.toLocaleString('ar-SA', { month: 'long', year: 'numeric' });
+            const mYear = currentDate.getFullYear();
+            const mMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
+            
             schedule.push({
               title: `القسط الدوري (رقم ${i})`,
               amount: monthlyAmt,
-              dateStr: `يوم ${dueDay} ${monthName}`
+              dateStr: `يوم ${dueDay} (${mYear}/${mMonth})`
             });
           }
 
@@ -377,8 +388,8 @@
               months_count: selectedTier.value.monthsCount || 3,
               employment_sector: employmentSector.value,
               due_day: selectedTier.value.dueDay,
-              serious_fee_paid: true, // عربون الجدية 14 ريال
-              nafaz_status: 'pending', // بانتظار تفعيل نافذ
+              serious_fee_paid: true,
+              nafaz_status: 'pending',
               is_early_settlement: isEarlySettlement.value,
               final_amount: selectedTier.value.totalCost,
               status: 'pending'
@@ -397,8 +408,11 @@
           isProcessing.value = false;
         };
 
+        // دالة طباعة محسنة ومخصصة لتجاوز قيود متصفحات الهواتف المحمولة
         const printReceipt = () => {
-          window.print();
+          setTimeout(() => {
+            window.print();
+          }, 150);
         };
 
         onMounted(() => {
@@ -414,6 +428,7 @@
           isLoading,
           showModal,
           generatedSchedule,
+          formattedCurrentDate,
           selectTier,
           updateDueDay,
           openScheduleModal,
