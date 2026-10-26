@@ -1,0 +1,15 @@
+{
+  "name": "منصة مَهلة للتمويل الرقمي",
+  "short_name": "منصة مَهلة",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d6e6e",
+  "theme_color": "#0d6e6e",
+  "icons": [
+    {
+      "src": "./mohla.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
