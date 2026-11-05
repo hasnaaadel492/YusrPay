@@ -129,7 +129,7 @@
           </div>
         </div>
 
-        <!-- 3. تفاصيل التمويل والسداد المبكر -->
+  <!-- 3. تفاصيل التمويل والسداد المبكر -->
         <div class="glass-card rounded-2xl p-5 shadow-sm space-y-4">
           <div class="flex justify-between items-center border-b pb-3 border-slate-100">
             <div>
@@ -138,7 +138,10 @@
             </div>
             <div class="text-left">
               <span class="text-xs text-slate-500 block font-bold"> السداد المبكر </span>
-              <span class="text-base font-bold text-slate-700">{{ Number(selectedTier.totalCost).toFixed(2) }} ريال</span>
+              <!-- تم التعديل هنا ليتم حساب السداد المبكر تلقائياً (أصل المبلغ + 30% أرباح أول شهر) -->
+              <span class="text-base font-bold text-slate-700">
+                {{ selectedTier.amount ? (Number(selectedTier.amount) * 1.30).toFixed(2) : '0.00' }} ريال
+              </span>
             </div>
           </div>
 
@@ -424,11 +427,17 @@ const showNotification = (msg, type = 'success') => {
           selectedTier.value.dueDay = (employmentSector.value === 'governmental') ? 27 : 1;
         };
 
-        const selectTier = (item) => {
-          selectedTier.value = item;
-          console.log('تم اختيار الشريحة:', item);
-          updateDueDay();
-        };
+      const selectTier = (item) => {
+  // حساب السداد المبكر تلقائياً بناءً على قيمة الشريحة (أصل المبلغ + 30% أو المعادلة المحددة)
+  const amountValue = Number(item.amount) || 0;
+  const earlySettlementCalc = amountValue + (amountValue * 0.30); // نسبة 30% أو القيمة المناسبة لمعادلة الأستاذ إبراهيم
+
+  selectedTier.value = {
+    ...item,
+    amount: amountValue,
+    earlySettlement: earlySettlementCalc
+  };
+};
 
         // أوامر Supabase: جلب الشرائح
         const fetchTiersFromSupabase = async () => {
