@@ -555,6 +555,7 @@ showNotification('🎉 تم إرسال طلبك ومستنداتك بنجاح و
             alert('⚠️ حدث خطأ أثناء إرسال الطلب: ' + err.message);
           } finally {
             isProcessing.value = false;
+            isAgreed.value = false;
           }
         };
 
