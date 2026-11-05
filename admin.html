@@ -4,9 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>لوحة التحكم - إدارة منصة مُهْلَة الرقمية</title>
-    <link rel="icon" type="image/jpeg" href="mohla.jpg">
+  <link rel="icon" type="image/jpeg" href="mohla.jpg">
 
-  
   <!-- Tailwind CSS & Font Awesome -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -24,9 +23,9 @@
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen p-4 pb-12">
 
-  <div id="admin-app" class="max-w-5xl mx-auto space-y-6">
+  <div id="admin-app" class="max-w-6xl mx-auto space-y-6">
 
-    <!-- 🔒 1. Login Screen (تظهر في حال عدم تسجيل الدخول) -->
+    <!-- 🔒 1. Login Screen -->
     <div v-if="!isAuthenticated" class="max-w-md mx-auto my-16 bg-white rounded-3xl p-8 shadow-xl border border-slate-200 text-center space-y-6">
       <div class="w-16 h-16 bg-slate-900 text-amber-400 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-lg">
         <i class="fa-solid fa-lock"></i>
@@ -36,7 +35,6 @@
         <p class="text-xs text-slate-500 mt-1">يرجى إدخال بيانات حساب المسؤول للوصول للوحة التحكم</p>
       </div>
 
-      <!-- Notification Toast inside Login -->
       <transition name="fade">
         <div v-if="toast.show" :class="['p-3 rounded-xl text-xs font-bold text-white flex items-center justify-between shadow', toast.type === 'error' ? 'bg-rose-600' : 'bg-emerald-600']">
           <span>{{ toast.message }}</span>
@@ -65,7 +63,7 @@
       </form>
     </div>
 
-    <!-- 📊 2. Main Admin Dashboard (تظهر فقط عند تسجيل الدخول بنجاح) -->
+    <!-- 📊 2. Main Admin Dashboard -->
     <template v-else>
       
       <!-- Header -->
@@ -75,7 +73,7 @@
             <i class="fa-solid fa-user-shield text-amber-400"></i>
             لوحة إدارة منصة مُهْلَة (Admin Dashboard)
           </h1>
-          <p class="text-xs text-slate-400">مرحباً {{ userEmail }} - إدارة الشرائح ومتابعة طلبات العملاء وسندات نافذ</p>
+          <p class="text-xs text-slate-400">مرحباً {{ userEmail }} - إدارة الشرائح ومتابعة طلبات العملاء والمستندات</p>
         </div>
         <div class="flex items-center gap-3">
           <span class="bg-emerald-500/20 text-emerald-300 text-xs font-bold px-3 py-1.5 rounded-full border border-emerald-500/30 flex items-center gap-1">
@@ -88,32 +86,27 @@
           </button>
         </div>
       </header>
+
       <!-- Custom Confirmation Modal -->
-<div v-if="deleteModal.show" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-  <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-200 text-center space-y-4 animate-fade-in">
-    <div class="w-14 h-14 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-inner">
-      <i class="fa-solid fa-triangle-exclamation"></i>
-    </div>
-    <div>
-      <h3 class="text-base font-extrabold text-slate-900">تأكيد الحذف</h3>
-      <p class="text-xs text-slate-500 mt-1">هل أنت متأكد من حذف هذه الشريحة نهائياً؟ لا يمكن التراجع عن هذا الإجراء.</p>
-    </div>
-    <div class="flex gap-2 pt-2">
-      <button 
-        @click="confirmDelete" 
-        class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-xl transition-all text-xs shadow-md shadow-rose-600/20"
-      >
-        نعم، احذف
-      </button>
-      <button 
-        @click="deleteModal.show = false" 
-        class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition-all text-xs"
-      >
-        إلغاء
-      </button>
-    </div>
-  </div>
-</div>
+      <div v-if="deleteModal.show" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-200 text-center space-y-4">
+          <div class="w-14 h-14 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-inner">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900">تأكيد الحذف</h3>
+            <p class="text-xs text-slate-500 mt-1">هل أنت متأكد من حذف هذه الشريحة نهائياً؟ لا يمكن التراجع عن هذا الإجراء.</p>
+          </div>
+          <div class="flex gap-2 pt-2">
+            <button @click="confirmDelete" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-xl transition-all text-xs shadow-md">
+              نعم، احذف
+            </button>
+            <button @click="deleteModal.show = false" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition-all text-xs">
+              إلغاء
+            </button>
+          </div>
+        </div>
+      </div>
 
       <!-- Notification Toast -->
       <transition name="fade">
@@ -130,9 +123,6 @@
             <i :class="['fa-solid', isEditing ? 'fa-pen-to-square text-amber-600' : 'fa-plus-circle text-teal-600']"></i>
             <span>{{ isEditing ? 'تعديل شريحة التمويل المحددة' : 'إضافة شريحة تمويل جديدة' }}</span>
           </h2>
-          <span v-if="isEditing" class="text-[10px] bg-amber-200 text-amber-800 font-bold px-2.5 py-0.5 rounded-full">
-            جاري التعديل الآن
-          </span>
         </div>
 
         <form @submit.prevent="saveTier" class="space-y-4 text-xs">
@@ -156,41 +146,22 @@
               <label class="font-bold text-slate-600 block mb-1">عدد أشهر الأقساط اللاحقة</label>
               <input v-model.number="form.months_count" type="number" min="1" required placeholder="مثال: 3" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white">
             </div>
-       <div>
-  <label class="font-bold text-slate-600 block mb-1">يوم الاستحقاق الافتراضي</label>
-  <div class="relative">
-    <select 
-      v-model.number="form.due_day" 
-      required 
-      class="w-full p-2.5 px-3 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-teal-600 appearance-none text-xs font-bold text-slate-800 transition-all cursor-pointer shadow-sm"
-    >
-      <option :value="27">يوم 27 (قطاع حكومي)</option>
-      <option :value="1">يوم 1 (قطاع خاص / متقاعد)</option>
-    </select>
-    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center px-3 text-slate-400">
-      <i class="fa-solid fa-chevron-down text-xs"></i>
-    </div>
-  </div>
-</div>
+            <div>
+              <label class="font-bold text-slate-600 block mb-1">يوم الاستحقاق الافتراضي</label>
+              <select v-model.number="form.due_day" required class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white text-xs font-bold text-slate-800">
+                <option :value="27">يوم 27 (قطاع حكومي)</option>
+                <option :value="1">يوم 1 (قطاع خاص / متقاعد)</option>
+              </select>
+            </div>
           </div>
 
           <div class="flex gap-2 pt-2">
-            <button 
-              type="submit" 
-              :disabled="isSubmitting"
-              :class="['flex-1 text-white font-bold py-3 rounded-xl transition-all shadow flex justify-center items-center gap-2', isEditing ? 'bg-amber-600 hover:bg-amber-700' : 'bg-teal-700 hover:bg-teal-800']"
-            >
+            <button type="submit" :disabled="isSubmitting" :class="['flex-1 text-white font-bold py-3 rounded-xl transition-all shadow flex justify-center items-center gap-2', isEditing ? 'bg-amber-600 hover:bg-amber-700' : 'bg-teal-700 hover:bg-teal-800']">
               <i v-if="isSubmitting" class="fa-solid fa-circle-notch fa-spin"></i>
               <span>{{ isSubmitting ? 'جاري الحفظ...' : (isEditing ? 'حفظ التعديلات' : 'إضافة الشريحة لقاعدة البيانات') }}</span>
             </button>
-            
-            <button 
-              v-if="isEditing" 
-              type="button" 
-              @click="cancelEdit"
-              class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-3 rounded-xl transition-all"
-            >
-              إلغاء التعديل
+            <button v-if="isEditing" type="button" @click="cancelEdit" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-3 rounded-xl transition-all">
+              إلغاء
             </button>
           </div>
         </form>
@@ -206,8 +177,7 @@
         </div>
 
         <div v-if="isLoadingTiers" class="text-center py-6 text-xs text-slate-400">
-          <i class="fa-solid fa-circle-notch fa-spin text-lg block mb-2 text-teal-600"></i>
-          جاري جلب الشرائح...
+          <i class="fa-solid fa-circle-notch fa-spin text-lg block mb-2 text-teal-600"></i> جاري جلب الشرائح...
         </div>
 
         <div v-else-if="tiers.length === 0" class="text-center py-6 text-xs text-slate-400 border border-dashed rounded-xl">
@@ -218,28 +188,24 @@
           <div v-for="t in tiers" :key="t.id" class="py-3 flex justify-between items-center">
             <div>
               <span class="font-extrabold text-teal-800 text-base ml-2">{{ t.tier_amount }} ريال</span>
-              <span class="text-slate-500 text-xs">
-                | الإجمالي: {{ t.total_cost }} ريال | القسط الأول: {{ t.first_installment }} ريال | الأقساط: {{ t.months_count || 3 }} أشهر
-              </span>
+              <span class="text-slate-500 text-xs">| الإجمالي: {{ t.total_cost }} ريال | القسط الأول: {{ t.first_installment }} ريال | الأقساط: {{ t.months_count || 3 }} أشهر</span>
             </div>
             <div class="flex gap-2">
-              <button @click="editTier(t)" class="text-amber-700 font-bold bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition-all border border-amber-200">
+              <button @click="editTier(t)" class="text-amber-700 font-bold bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg border border-amber-200">
                 <i class="fa-solid fa-pen-to-square ml-1"></i> تعديل
               </button>
-              <button @click="deleteTier(t.id)" class="text-rose-600 font-bold bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg transition-all">
-                حذف
-              </button>
+              <button @click="deleteTier(t.id)" class="text-rose-600 font-bold bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg">حذف</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Customer Loan Requests Section -->
+      <!-- Customer Loan Requests Section (Updated with client details & files) -->
       <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-xs font-bold text-slate-700 flex items-center gap-2">
             <i class="fa-solid fa-clipboard-list text-teal-600"></i>
-            طلبات التمويل الواردة من العملاء (متابعة السندات وعربون الجدية):
+            طلبات التمويل الواردة من العملاء (متابعة البيانات والمستندات):
           </h3>
           <button @click="fetchLoanRequests" class="text-xs text-teal-700 hover:underline font-bold flex items-center gap-1">
             <i class="fa-solid fa-rotate"></i> تحديث الطلبات
@@ -247,8 +213,7 @@
         </div>
 
         <div v-if="isLoadingRequests" class="text-center py-6 text-xs text-slate-400">
-          <i class="fa-solid fa-circle-notch fa-spin text-lg block mb-2 text-teal-600"></i>
-          جاري جلب الطلبات...
+          <i class="fa-solid fa-circle-notch fa-spin text-lg block mb-2 text-teal-600"></i> جاري جلب الطلبات...
         </div>
 
         <div v-else-if="loanRequests.length === 0" class="text-center py-6 text-xs text-slate-400 border border-dashed rounded-xl">
@@ -261,11 +226,10 @@
               <tr class="bg-slate-50 text-slate-600 border-b">
                 <th class="p-2.5">رقم الطلب</th>
                 <th class="p-2.5">الشريحة</th>
-                <th class="p-2.5">قطاع التوظيف</th>
-                <th class="p-2.5">عربون (14 ريال)</th>
-                <th class="p-2.5">إجمالي التمويل</th>
-                <th class="p-2.5">السداد المبكر</th>
-                <th class="p-2.5">حالة الطلب / نافذ</th>
+                <th class="p-2.5">القطاع</th>
+                <th class="p-2.5">بيانات العميل</th>
+                <th class="p-2.5">الإجمالي</th>
+                <th class="p-2.5">حالة الطلب</th>
                 <th class="p-2.5">التاريخ والوقت</th>
               </tr>
             </thead>
@@ -275,41 +239,31 @@
                 <td class="p-2.5 font-bold">{{ req.tier_amount }} ريال</td>
                 <td class="p-2.5">
                   <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-bold">
-                    {{ req.employment_sector === 'governmental' ? 'حكومي (27)' : (req.employment_sector === 'private' ? 'خاص (1)' : 'متقاعد (1)') }}
+                    {{ req.employment_sector === 'governmental' ? 'حكومي' : 'خاص' }}
                   </span>
                 </td>
-                <td class="p-2.5">
-                  <span :class="['px-2 py-0.5 rounded-full font-bold', req.serious_fee_paid ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800']">
-                    {{ req.serious_fee_paid ? 'مدفوع (14ر.س)' : 'غير مدفوع' }}
-                  </span>
+                <td class="p-2.5 space-y-0.5">
+                  <div class="font-bold text-slate-900">هوية: {{ req.national_id || 'غير متوفر' }}</div>
+                  <div class="text-[10px] text-slate-500">جوال: {{ req.phone || 'غير متوفر' }} | مدينة: {{ req.city || '-' }}</div>
                 </td>
+             
                 <td class="p-2.5 font-extrabold text-slate-800">{{ req.total_cost }} ريال</td>
                 <td class="p-2.5">
-                  <span :class="['px-2 py-0.5 rounded-full text-[10px] font-bold', req.is_early_settlement ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600']">
-                    {{ req.is_early_settlement ? 'مفعل (إسقاط الأرباح)' : 'لا' }}
-                  </span>
+                  <select 
+                    v-model="req.status" 
+                    @change="updateStatus(req.id, req.status)"
+                    :class="[
+                      'w-full p-1.5 rounded-xl font-extrabold text-[11px] border cursor-pointer focus:outline-none',
+                      req.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : 
+                      (req.status === 'rejected' ? 'bg-rose-50 text-rose-700 border-rose-300' : 'bg-amber-50 text-amber-700 border-amber-300')
+                    ]"
+                  >
+                    <option value="pending">⏳ pending (قيد الانتظار)</option>
+                    <option value="approved">✅ approved (موافق عليه)</option>
+                    <option value="rejected">❌ rejected (مرفوض)</option>
+                  </select>
                 </td>
-           <td class="p-2.5">
-  <div class="relative inline-block w-full min-w-[140px]">
-    <select 
-      v-model="req.status" 
-      @change="updateStatus(req.id, req.status)"
-      :class="[
-        'w-full pl-7 pr-3 py-1.5 rounded-xl font-extrabold text-[11px] border appearance-none cursor-pointer focus:outline-none focus:ring-2 transition-all shadow-sm',
-        req.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-300 focus:ring-emerald-400' : 
-        (req.status === 'rejected' ? 'bg-rose-50 text-rose-700 border-rose-300 focus:ring-rose-400' : 'bg-amber-50 text-amber-700 border-amber-300 focus:ring-amber-400')
-      ]"
-    >
-      <option value="pending" class="bg-white text-amber-700 font-bold">⏳ pending (قيد الانتظار)</option>
-      <option value="approved" class="bg-white text-emerald-700 font-bold">✅ approved (تم إصدار نافذ)</option>
-      <option value="rejected" class="bg-white text-rose-700 font-bold">❌ rejected (مرفوض)</option>
-    </select>
-    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center px-2 text-slate-400">
-      <i class="fa-solid fa-chevron-down text-[10px]"></i>
-    </div>
-  </div>
-</td>
-                <td class="p-2.5 text-slate-400 text-[11px]">{{ new Date(req.created_at).toLocaleString('ar-SA') }}</td>
+                <td class="p-2.5 text-slate-400 text-[10px]">{{ new Date(req.created_at).toLocaleString('ar-SA') }}</td>
               </tr>
             </tbody>
           </table>
@@ -333,7 +287,6 @@
 
     createApp({
       setup() {
-        // Auth states
         const isAuthenticated = ref(false);
         const isLoggingIn = ref(false);
         const loginEmail = ref('');
@@ -341,7 +294,6 @@
         const userEmail = ref('');
         const deleteModal = ref({ show: false, id: null });
 
-        // App states
         const tiers = ref([]);
         const loanRequests = ref([]);
         const isLoadingTiers = ref(true);
@@ -364,7 +316,6 @@
           setTimeout(() => { toast.value.show = false; }, 3500);
         };
 
-        // Check active Session
         const checkSession = async () => {
           if (supabaseClient) {
             const { data: { session } } = await supabaseClient.auth.getSession();
@@ -379,7 +330,6 @@
           }
         };
 
-        // Handle Login
         const handleLogin = async () => {
           isLoggingIn.value = true;
           if (supabaseClient) {
@@ -401,7 +351,6 @@
           isLoggingIn.value = false;
         };
 
-        // Handle Logout
         const handleLogout = async () => {
           if (supabaseClient) {
             await supabaseClient.auth.signOut();
@@ -420,14 +369,12 @@
               .select('*')
               .order('tier_amount', { ascending: true });
 
-            if (!error && data) {
-              tiers.value = data;
-            }
+            if (!error && data) tiers.value = data;
           }
           isLoadingTiers.value = false;
         };
 
-        const fetchLoanRequests = async () => {
+      const fetchLoanRequests = async () => {
           isLoadingRequests.value = true;
           if (supabaseClient) {
             const { data, error } = await supabaseClient
@@ -436,11 +383,20 @@
               .order('created_at', { ascending: false });
 
             if (!error && data) {
-              loanRequests.value = data;
+              const localData = JSON.parse(localStorage.getItem('mohla_client_details') || '{}');
+              loanRequests.value = data.map(req => ({
+                ...req,
+                national_id: req.national_id || (localData[req.id] ? localData[req.id].national_id : null),
+                phone: req.phone || (localData[req.id] ? localData[req.id].phone : null),
+                city: req.city || (localData[req.id] ? localData[req.id].city : null),
+                salary_doc_url: req.salary_doc_url || (localData[req.id] ? localData[req.id].salary_doc_url : null),
+                simah_doc_url: req.simah_doc_url || (localData[req.id] ? localData[req.id].simah_doc_url : null)
+              }));
             }
           }
           isLoadingRequests.value = false;
         };
+
 
         const updateStatus = async (id, newStatus) => {
           if (supabaseClient) {
@@ -477,111 +433,50 @@
           form.value = { tier_amount: null, total_cost: null, first_installment: null, months_count: 3, due_day: 27 };
         };
 
-      const saveTier = async () => {
- // التحقق من عدم تكرار نفس مبلغ الشريحة مع نفس عدد الأشهر (المسار) عند الإضافة الجديدة
-  if (!isEditing.value) {
-    const exists = tiers.value.some(t => 
-      Number(t.tier_amount) === Number(form.value.tier_amount) && 
-      Number(t.months_count) === Number(form.value.months_count)
-    );
-    if (exists) {
-      showNotification('⚠️ هذا المسار (نفس مبلغ الشريحة ونفس عدد الأشهر) موجود مسبقاً!', 'error');
-      return;
-    }
-  }
+        const saveTier = async () => {
+          isSubmitting.value = true;
+          if (supabaseClient) {
+            const payload = {
+              tier_amount: form.value.tier_amount,
+              total_cost: form.value.total_cost,
+              first_installment: form.value.first_installment,
+              months_count: form.value.months_count,
+              due_day: form.value.due_day
+            };
 
-  isSubmitting.value = true;
-  if (supabaseClient) {
-    const payload = {
-      tier_amount: form.value.tier_amount,
-      total_cost: form.value.total_cost,
-      first_installment: form.value.first_installment,
-      months_count: form.value.months_count,
-      due_day: form.value.due_day
-    };
+            if (isEditing.value) {
+              const { error } = await supabaseClient.from('user_loans').update(payload).eq('id', editingId.value);
+              if (error) showNotification('خطأ أثناء التعديل: ' + error.message, 'error');
+              else { showNotification('✨ تم تحديث الشريحة بنجاح!', 'success'); cancelEdit(); await fetchTiers(); }
+            } else {
+              const { error } = await supabaseClient.from('user_loans').insert([payload]);
+              if (error) showNotification('خطأ أثناء الإضافة: ' + error.message, 'error');
+              else { showNotification('🎉 تمت إضافة الشريحة بنجاح!', 'success'); form.value = { tier_amount: null, total_cost: null, first_installment: null, months_count: 3, due_day: 27 }; await fetchTiers(); }
+            }
+          }
+          isSubmitting.value = false;
+        };
 
-    if (isEditing.value) {
-      const { error } = await supabaseClient
-        .from('user_loans')
-        .update(payload)
-        .eq('id', editingId.value);
+        const deleteTier = (id) => { deleteModal.value = { show: true, id: id }; };
 
-      if (error) {
-        showNotification('خطأ أثناء التعديل: ' + error.message, 'error');
-      } else {
-        showNotification('✨ تم تحديث الشريحة بنجاح!', 'success');
-        cancelEdit();
-        await fetchTiers();
-      }
-    } else {
-      const { error } = await supabaseClient
-        .from('user_loans')
-        .insert([payload]);
+        const confirmDelete = async () => {
+          const id = deleteModal.value.id;
+          deleteModal.value.show = false;
+          if (supabaseClient) {
+            const { error } = await supabaseClient.from('user_loans').delete().eq('id', id);
+            if (error) showNotification('خطأ في الحذف: ' + error.message, 'error');
+            else { showNotification('🗑️ تم حذف الشريحة بنجاح', 'success'); await fetchTiers(); }
+          }
+        };
 
-      if (error) {
-        showNotification('خطأ أثناء الإضافة: ' + error.message, 'error');
-      } else {
-        showNotification('🎉 تمت إضافة الشريحة بنجاح!', 'success');
-        form.value = { tier_amount: null, total_cost: null, first_installment: null, months_count: 3, due_day: 27 };
-        await fetchTiers();
-      }
-    }
-  }
-  isSubmitting.value = false;
-};
-
-       // استبدل دالة deleteTier القديمة بهذا الكود
-const deleteTier = (id) => {
-  deleteModal.value = { show: true, id: id };
-};
-
-const confirmDelete = async () => {
-  const id = deleteModal.value.id;
-  deleteModal.value.show = false;
-
-  if (supabaseClient) {
-    const { error } = await supabaseClient
-      .from('user_loans')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      showNotification('خطأ في الحذف: ' + error.message, 'error');
-    } else {
-      showNotification('🗑️ تم حذف الشريحة بنجاح', 'success');
-      await fetchTiers();
-    }
-  }
-};
-        onMounted(() => {
-          checkSession();
-        });
+        onMounted(() => { checkSession(); });
 
         return {
-          isAuthenticated,
-          isLoggingIn,
-          loginEmail,
-          loginPassword,
-          userEmail,
-          handleLogin,
-          handleLogout,
-          tiers,
-          loanRequests,
-          form,
-          isLoadingTiers,
-          isLoadingRequests,
-          isSubmitting,
-          isEditing,
-          toast,
-          saveTier,
-          editTier,
-          cancelEdit,
-          deleteTier,
-          fetchTiers,
-          fetchLoanRequests,
-          updateStatus,
-          deleteModal,
-          confirmDelete
+          isAuthenticated, isLoggingIn, loginEmail, loginPassword, userEmail,
+          handleLogin, handleLogout, tiers, loanRequests, form,
+          isLoadingTiers, isLoadingRequests, isSubmitting, isEditing, toast,
+          saveTier, editTier, cancelEdit, deleteTier, fetchTiers, fetchLoanRequests,
+          updateStatus, deleteModal, confirmDelete
         };
       }
     }).mount('#admin-app');
