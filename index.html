@@ -38,8 +38,6 @@
     .modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.3s ease; }
     .modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen pb-16">
@@ -82,10 +80,10 @@
 
       <template v-else-if="tiers.length > 0">
         
-        <!-- 1. اختيار الشريحة ثم اختيار أنظمة الدفع (نموذج تمارا) -->
+        <!-- 1. اختيار الشريحة ثم خطط الدفع -->
         <div class="glass-card rounded-2xl p-4 shadow-sm space-y-4">
           
-          <!-- أ) اختيار الشريحة بدون تكرار -->
+          <!-- أ) المبالغ بدون تكرار -->
           <div>
             <h2 class="text-xs font-extrabold text-slate-700 flex items-center gap-1.5 mb-2.5">
               <i class="fa-solid fa-layer-group text-teal-600"></i>
@@ -108,54 +106,39 @@
             </div>
           </div>
 
-          <!-- ب) أنظمة الدفع المتاحة للشريحة المختارة (نمط تمارا العمودي) -->
-          <div class="border-t pt-3 space-y-2">
-            <div class="flex justify-between items-center mb-1">
-              <h3 class="text-xs font-extrabold text-slate-700 flex items-center gap-1.5">
-                <i class="fa-solid fa-list-check text-teal-600"></i>
-                خطط وأنظمة التقسيط لشريحة ({{ selectedAmount }} ريال):
-              </h3>
-              <span class="text-[9px] bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded-md">اختر الخطة</span>
-            </div>
+          <!-- ب) كروت خطط الدفع (المبلغ يمين والدفعات يسار بألوان المنصة) -->
+          <div class="border-t pt-3 space-y-2.5">
+            <h3 class="text-xs font-extrabold text-slate-700 mb-2">
+              خطط الدفع لشريحة ({{ selectedAmount }} ريال):
+            </h3>
 
-            <div class="space-y-2">
+            <div class="space-y-2.5">
               <div 
                 v-for="(item, index) in availablePlansForSelectedAmount" 
                 :key="item.id || index"
                 @click="selectTier(item)"
                 :class="[
-                  'p-3.5 rounded-xl transition-all border flex items-center justify-between cursor-pointer relative',
+                  'p-4 rounded-2xl transition-all border flex items-center justify-between cursor-pointer relative',
                   (selectedTier && selectedTier.id === item.id) 
-                    ? 'bg-teal-700 text-white border-teal-700 shadow-md ring-2 ring-teal-600/30' 
-                    : 'bg-white text-slate-800 border-slate-200 hover:border-teal-300 hover:bg-slate-50/50'
+                    ? 'bg-white border-teal-700 ring-2 ring-teal-600/30 shadow-md' 
+                    : 'bg-white border-slate-200 hover:border-slate-300'
                 ]"
               >
-                <!-- الجانب الأيمن: المسار والقسط الأول -->
-                <div class="flex items-center gap-3">
-                  <div :class="['w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs', (selectedTier && selectedTier.id === item.id) ? 'bg-amber-400 text-slate-900' : 'bg-teal-50 text-teal-700 border border-teal-100']">
-                    <i class="fa-solid fa-credit-card"></i>
+                <!-- الجانب الأيمن: قيمة القسط والملاحظة -->
+                <div>
+                  <div class="font-black text-slate-900 text-sm">
+                    {{ item.first_installment }} <span class="text-xs font-bold text-slate-600">ريال \ شهرياً</span>
                   </div>
-                  <div>
-                    <div class="flex items-center gap-2">
-                      <span :class="['text-xs font-black px-2 py-0.5 rounded', (selectedTier && selectedTier.id === item.id) ? 'bg-amber-400 text-slate-900' : 'bg-slate-100 text-slate-700']">
-                        {{ item.payment_path || 'مسار عام' }}
-                      </span>
-                    </div>
-                    <p :class="['text-[11px] mt-1 font-semibold', (selectedTier && selectedTier.id === item.id) ? 'text-teal-100' : 'text-slate-600']">
-                      القسط الأول: <span class="font-bold text-xs">{{ item.first_installment }} ريال</span>
-                    </p>
-                  </div>
+                  <span class="text-[10px] text-slate-400 font-semibold block mt-0.5">
+                    {{ item.payment_path.includes('ربح') ? 'قد تشمل رسوم أرباح' : 'بدون رسوم إضافية' }}
+                  </span>
                 </div>
 
-                <!-- الجانب الأيسر: الإجمالي ومؤشر التحديد -->
-                <div class="flex items-center gap-2">
-                  <div class="text-left">
-                    <span :class="['block text-[9px]', (selectedTier && selectedTier.id === item.id) ? 'text-teal-100' : 'text-slate-400']">الإجمالي</span>
-                    <span class="font-extrabold text-xs">{{ item.total_cost }} ريال</span>
-                  </div>
-                  <div :class="['w-5 h-5 rounded-full border flex items-center justify-center text-xs', (selectedTier && selectedTier.id === item.id) ? 'bg-amber-400 border-amber-400 text-slate-900 font-bold' : 'border-slate-300 text-transparent']">
-                    <i class="fa-solid fa-check text-[10px]"></i>
-                  </div>
+                <!-- الجانب الأيسر: شارة عدد الدفعات -->
+                <div>
+                  <span class="bg-teal-50 text-teal-800 font-extrabold text-xs px-3 py-1.5 rounded-xl border border-teal-100">
+                    {{ getInstallmentBadge(item.payment_path) }}
+                  </span>
                 </div>
               </div>
             </div>
@@ -205,11 +188,10 @@
             </div>
           </div>
 
-          <!-- جدول الأقساط -->
-          <button @click="openScheduleModal" class="w-full bg-slate-100 hover:bg-slate-200 text-teal-800 font-bold py-2.5 rounded-xl text-xs transition-all border border-teal-200 flex justify-center items-center gap-2 cursor-pointer">
-            <i class="fa-solid fa-calendar-days text-teal-600"></i>
-            <span>عرض جدول استحقاق كافة الأقساط</span>
-          </button>
+          <!-- تم تحويل Modal جدول الاستحقاق إلى تعليق (Comment) لمنع التكرار -->
+          <!-- 
+          <button @click="openScheduleModal" class="...">عرض جدول استحقاق كافة الأقساط</button> 
+          -->
 
           <!-- قسم التسوية وإسقاط الأرباح -->
           <div class="p-3 bg-slate-50 border rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-3 text-xs">
@@ -249,7 +231,7 @@
       </template>
     </main>
 
-    <!-- Modal صفحة التسجيل ورفع المستندات -->
+    <!-- Modal صفحة التسجيل ورفع المستندات (مطلوبة ومفعلة) -->
     <transition name="modal-fade">
       <div v-if="showRegisterModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 overflow-y-auto">
         <div class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-2xl border border-slate-100 space-y-3 my-auto max-h-[90vh] overflow-y-auto">
@@ -347,36 +329,6 @@
       </div>
     </transition>
 
-    <!-- Modal جدول الاستحقاق -->
-    <transition name="modal-fade">
-      <div v-if="showModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-100 space-y-4">
-          <div class="flex justify-between items-center border-b pb-3">
-            <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
-              <i class="fa-solid fa-calendar-check text-teal-600"></i>
-              جدول استحقاق أقساط الشريحة المحددة
-            </h3>
-            <button @click="showModal = false" class="text-slate-400 hover:text-slate-700 text-lg cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
-          </div>
-          <div class="space-y-2 max-h-64 overflow-y-auto pr-1 text-xs">
-            <div class="p-2.5 rounded-xl bg-teal-50 border border-teal-100 flex justify-between items-center">
-              <span class="font-bold text-teal-900">القسط الأول (الشهر 1)</span>
-              <span class="font-extrabold text-teal-700">{{ selectedTier.first_installment }} ريال</span>
-            </div>
-            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex justify-between items-center">
-              <span class="font-bold text-slate-700">الأقساط اللاحقة والدورية</span>
-              <span class="font-extrabold text-slate-800">{{ selectedTier.subsequent_installments_text }}</span>
-            </div>
-            <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-100 flex justify-between items-center">
-              <span class="font-bold text-amber-900">كلفة الأجل الإجمالية</span>
-              <span class="font-extrabold text-amber-800">{{ selectedTier.total_cost }} ريال</span>
-            </div>
-          </div>
-          <button @click="showModal = false" class="w-full bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs cursor-pointer">إغلاق</button>
-        </div>
-      </div>
-    </transition>
-
     <!-- أيقونة الواتساب العائمة -->
     <div class="fixed bottom-6 left-6 z-50 flex items-center group">
       <div class="absolute left-16 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0 pointer-events-none whitespace-nowrap bg-white text-slate-800 text-xs font-bold px-3 py-2 rounded-xl shadow-lg border border-slate-100 flex items-center">
@@ -410,13 +362,12 @@
       setup() {
         const tiers = ref([]);
         const selectedTier = ref({});
-        const selectedAmount = ref(1000); // المبلغ المحدد حالياً (مثال: 1000)
+        const selectedAmount = ref(1000);
         const employmentSector = ref('governmental');
         const isAgreed = ref(false);
         const showRegisterModal = ref(false);
         const isProcessing = ref(false);
         const isLoading = ref(true);
-        const showModal = ref(false);
         const showPassword = ref(false);
 
         const toast = ref({ show: false, message: '', type: 'success' });
@@ -428,20 +379,25 @@
           }, 4000);
         };
 
-        // المبالغ المتاحة بدون تكرار إطلاقاً (1000, 1500, 2000, 2500, 3000)
         const uniqueAmounts = computed(() => {
           const amounts = tiers.value.map(t => Number(t.tier_amount));
           return [...new Set(amounts)].sort((a, b) => a - b);
         });
 
-        // الأنظمة والخطط المتاحة للمبلغ المحدد فقط (تمارا)
         const availablePlansForSelectedAmount = computed(() => {
           return tiers.value.filter(t => Number(t.tier_amount) === Number(selectedAmount.value));
         });
 
+        const getInstallmentBadge = (pathText) => {
+          if (!pathText) return 'دفعات ميسرة';
+          if (pathText.includes('3')) return '3 دفعات';
+          if (pathText.includes('4')) return '4 دفعات';
+          if (pathText.includes('5')) return '5 دفعات';
+          return pathText;
+        };
+
         const selectAmount = (amt) => {
           selectedAmount.value = amt;
-          // تفعيل أو تحديد أول خطة تلقائياً للمبلغ المختار
           const plans = availablePlansForSelectedAmount.value;
           if (plans.length > 0) {
             selectTier(plans[0]);
@@ -474,7 +430,6 @@
           selectedTier.value.dueDay = (employmentSector.value === 'governmental') ? 27 : 1;
         };
 
-        // جلب الشرائح من Supabase مرتبة تصاعدياً
         const fetchTiersFromSupabase = async () => {
           isLoading.value = true;
           try {
@@ -490,7 +445,6 @@
                 showNotification('خطأ في جلب الشرائح: ' + error.message, 'error');
               } else if (data && data.length > 0) {
                 tiers.value = data;
-                // تعيين أول مبلغ وأول خيار افتراضياً
                 selectedAmount.value = Number(data[0].tier_amount);
                 selectedTier.value = {
                   ...data[0],
@@ -603,10 +557,6 @@
           }
         };
 
-        const openScheduleModal = () => {
-          showModal.value = true;
-        };
-
         onMounted(() => {
           fetchTiersFromSupabase();
           const splash = document.getElementById('pwa-splash-screen');
@@ -628,16 +578,15 @@
           showRegisterModal,
           isProcessing, 
           isLoading, 
-          showModal, 
           regForm, 
           showPassword,
+          getInstallmentBadge,
           selectAmount,
           selectTier, 
           updateDueDay, 
           proceedToRegistration, 
           handleFileUpload,
           submitFinalApplication, 
-          openScheduleModal, 
           fetchTiersFromSupabase, 
           toast, 
           showNotification
