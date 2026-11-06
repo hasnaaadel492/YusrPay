@@ -63,7 +63,7 @@
             <p class="text-xs text-teal-100">تمويل ميسر وتقسيط مرن</p>
           </div>
         </div>
-        <button @click="fetchTiersFromSupabase" class="bg-teal-700 hover:bg-teal-600 text-xs px-3 py-1.5 rounded-full font-semibold flex items-center gap-1.5 border border-teal-500">
+        <button @click="fetchTiersFromSupabase" class="bg-teal-700 hover:bg-teal-600 text-xs px-3 py-1.5 rounded-full font-semibold flex items-center gap-1.5 border border-teal-500 cursor-pointer">
           <i class="fa-solid fa-rotate"></i>
           <span>تحديث</span>
         </button>
@@ -80,38 +80,36 @@
 
       <template v-else-if="tiers.length > 0">
         
-        <!-- 1. الشريحة ونمط العرض -->
+        <!-- 1. الشريحة ومسارات السداد -->
         <div class="glass-card rounded-2xl p-4 shadow-sm">
-          <h2 class="text-xs font-extrabold text-slate-700 mb-2 flex items-center gap-1.5">
+          <h2 class="text-xs font-extrabold text-slate-700 mb-3 flex items-center gap-1.5">
             <i class="fa-solid fa-layer-group text-teal-600"></i>
-            1. اختر مبلغ التمويل المطلوب:
+            1. اختر شريحة التمويل ومسار السداد المناسب:
           </h2>
-     <div class="grid grid-cols-4 gap-2 mb-3">
-  <button 
-    v-for="(item, index) in tiers" 
-    :key="item.id || index"
-    @click="selectTier(item)"
-    :class="[
-      'py-2 px-1 rounded-xl text-center transition-all border font-bold text-xs flex flex-col justify-between items-center',
-      (selectedTier && selectedTier.amount === item.amount && selectedTier.monthsCount === item.monthsCount) 
-        ? 'bg-teal-700 text-white border-teal-700 shadow-md scale-105' 
-        : 'bg-white text-slate-700 border-slate-200 hover:border-teal-300'
-    ]"
-  >
-    <div class="font-black text-sm">
-      {{ item.amount }} <span class="text-[9px] font-normal">ريال</span>
-    </div>
-    
-    <!-- عرض عدد الأشهر للتمييز بين الشرائح المتشابهة -->
-    <div class="text-[9px] text-slate-400 font-semibold my-0.5">
-      ({{ item.monthsCount }} أشهر)
-    </div>
-
-    <div class="text-[9px] mt-1 px-1.5 py-0.5 rounded-md font-extrabold" :class="(selectedTier && selectedTier.amount === item.amount && selectedTier.monthsCount === item.monthsCount) ? 'bg-amber-400 text-slate-900' : 'bg-teal-50 text-teal-700'">
-      يبدأ من {{ item.firstInstallment }}
-    </div>
-  </button>
-</div>
+          
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-3">
+            <button 
+              v-for="(item, index) in tiers" 
+              :key="item.id || index"
+              @click="selectTier(item)"
+              :class="[
+                'p-3 rounded-xl text-right transition-all border flex flex-col justify-between gap-1.5 cursor-pointer',
+                (selectedTier && selectedTier.id === item.id) 
+                  ? 'bg-teal-700 text-white border-teal-700 shadow-md scale-[1.02]' 
+                  : 'bg-white text-slate-700 border-slate-200 hover:border-teal-300'
+              ]"
+            >
+              <div class="flex justify-between items-center w-full">
+                <span class="font-black text-sm">{{ item.tier_amount }} <span class="text-[10px] font-normal">ريال</span></span>
+                <span class="text-[9px] px-2 py-0.5 rounded-md font-extrabold" :class="(selectedTier && selectedTier.id === item.id) ? 'bg-amber-400 text-slate-900' : 'bg-teal-50 text-teal-700'">
+                  {{ item.payment_path || 'مسار عام' }}
+                </span>
+              </div>
+              <div class="text-[10px] opacity-90">
+                القسط الأول: <span class="font-bold">{{ item.first_installment }} ريال</span>
+              </div>
+            </button>
+          </div>
         </div>
 
         <!-- 2. قطاع التوظيف -->
@@ -121,7 +119,7 @@
             2. قطاع التوظيف وتثبيت موعد الاستحقاق:
           </h2>
           <div>
-            <select v-model="employmentSector" @change="updateDueDay" class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-teal-600">
+            <select v-model="employmentSector" @change="updateDueDay" class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-teal-600 cursor-pointer">
               <option value="governmental">موظف قطاع حكومي (استحقاق يوم 27)</option>
               <option value="private">موظف قطاع خاص (استحقاق يوم 1)</option>
               <option value="retired">متقاعد (استحقاق يوم 1)</option>
@@ -129,56 +127,54 @@
           </div>
         </div>
 
-  <!-- 3. تفاصيل التمويل والسداد المبكر -->
-        <div class="glass-card rounded-2xl p-5 shadow-sm space-y-4">
+        <!-- 3. تفاصيل التمويل والسداد المبكر -->
+        <div class="glass-card rounded-2xl p-5 shadow-sm space-y-4" v-if="selectedTier.tier_amount">
           <div class="flex justify-between items-center border-b pb-3 border-slate-100">
             <div>
               <span class="text-xs text-slate-500 block font-bold">أصل قيمة التمويل</span>
-              <span class="text-xl font-extrabold text-teal-700">{{ selectedTier.amount }} ريال</span>
+              <span class="text-xl font-extrabold text-teal-700">{{ selectedTier.tier_amount }} ريال</span>
             </div>
             <div class="text-left">
-              <span class="text-xs text-slate-500 block font-bold"> السداد المبكر </span>
-              <!-- تم التعديل هنا ليتم حساب السداد المبكر تلقائياً (أصل المبلغ + 30% أرباح أول شهر) -->
+              <span class="text-xs text-slate-500 block font-bold"> السداد المبكر</span>
               <span class="text-base font-bold text-slate-700">
-                {{ selectedTier.amount ? (Number(selectedTier.amount) * 1.30).toFixed(2) : '0.00' }} ريال
+                {{ selectedTier.early_settlement_first || (Number(selectedTier.tier_amount) * 1.30).toFixed(2) }} ريال
               </span>
             </div>
           </div>
 
           <!-- الأقساط -->
-          <div class="grid grid-cols-2 gap-3 text-xs">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div class="bg-amber-50/60 p-3 rounded-xl border border-amber-200/60">
-              <span class="text-amber-800 font-bold block mb-1">القسط الأول (يوم {{ selectedTier.dueDay }})</span>
-              <span class="font-black text-amber-900 text-sm">{{ Number(selectedTier.firstInstallment).toFixed(2) }} ريال</span>
+              <span class="text-amber-800 font-bold block mb-1">القسط الأول (يوم {{ selectedTier.dueDay || 27 }})</span>
+              <span class="font-black text-amber-900 text-sm">{{ Number(selectedTier.first_installment).toFixed(2) }} ريال</span>
             </div>
             <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
-              <span class="text-slate-600 font-bold block mb-1">الأقساط اللاحقة</span>
-              <span class="font-extrabold text-slate-800 text-xs">{{ selectedTier.subsequentInstallments }}</span>
+              <span class="text-slate-600 font-bold block mb-1">الأقساط اللاحقة والدورية</span>
+              <span class="font-extrabold text-slate-800 text-xs">{{ selectedTier.subsequent_installments_text || 'حسب الجدول المعتمد' }}</span>
             </div>
           </div>
 
           <!-- جدول الأقساط -->
-          <button @click="openScheduleModal" class="w-full bg-slate-100 hover:bg-slate-200 text-teal-800 font-bold py-2.5 rounded-xl text-xs transition-all border border-teal-200 flex justify-center items-center gap-2">
+          <button @click="openScheduleModal" class="w-full bg-slate-100 hover:bg-slate-200 text-teal-800 font-bold py-2.5 rounded-xl text-xs transition-all border border-teal-200 flex justify-center items-center gap-2 cursor-pointer">
             <i class="fa-solid fa-calendar-days text-teal-600"></i>
             <span>عرض جدول استحقاق كافة الأقساط</span>
           </button>
 
-         <!-- قسم التسوية وإسقاط الأرباح المتجاوْب -->
-<div class="p-3 bg-slate-50 border rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-3 text-xs">
-  <div class="flex items-center gap-2 font-bold text-slate-700">
-    <i class="fa-solid fa-percent text-teal-700"></i>
-    <span>طلب التسوية والسداد المبكر:</span>
-  </div>
-  
-  <div class="bg-teal-50 text-teal-800 px-3 py-1.5 rounded-xl font-bold text-center border border-teal-200 w-full sm:w-auto">
-    إسقاط الأرباح المستقبلية
-  </div>
-</div>
+          <!-- قسم التسوية وإسقاط الأرباح -->
+          <div class="p-3 bg-slate-50 border rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-3 text-xs">
+            <div class="flex items-center gap-2 font-bold text-slate-700">
+              <i class="fa-solid fa-percent text-teal-700"></i>
+              <span>قانون التسوية المبكرة وإسقاط الأرباح:</span>
+            </div>
+            <div class="bg-teal-50 text-teal-800 px-3 py-1.5 rounded-xl font-bold text-center border border-teal-200 w-full sm:w-auto">
+              إسقاط كامل أرباح الأشهر المستقبلية تلقائياً
+            </div>
+          </div>
 
-          <!-- خيارات الشروط وزر التسجيل -->
+          <!-- شروط الاستخدام وزر التسجيل -->
           <div class="border-t pt-4 border-slate-100 space-y-3">
             <label class="flex items-start gap-2.5 cursor-pointer bg-slate-50 p-3 rounded-xl border border-slate-200">
-              <input type="checkbox" v-model="isAgreed" class="mt-0.5 accent-teal-600 w-4 h-4 rounded">
+              <input type="checkbox" v-model="isAgreed" class="mt-0.5 accent-teal-600 w-4 h-4 rounded cursor-pointer">
               <span class="text-[11px] text-slate-700 leading-relaxed font-semibold">
                 أوافق على الشروط والأحكام الخاصة بمنصة مُهْلَة وأقر بصحة البيانات المدخلة والموافقة على التحقق الائتماني.
               </span>
@@ -204,129 +200,101 @@
 
     <!-- Modal صفحة التسجيل ورفع المستندات -->
     <transition name="modal-fade">
-     <div v-if="showRegisterModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-  <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4 my-8">
-    
-    <div class="flex justify-between items-center border-b pb-3">
-      <div>
-        <h3 class="font-bold text-sm text-teal-800 flex items-center gap-2">
-          <i class="fa-solid fa-id-card text-amber-500"></i>
-          استكمال بيانات التسجيل والتوثيق للتمويل
-        </h3>
-        <p class="text-[11px] text-slate-500">أدخل بياناتك بدقة وأرفق المستندات المطلوبة لشريحة ({{ selectedTier.amount }} ريال)</p>
-      </div>
-      <button @click="showRegisterModal = false" class="text-slate-400 hover:text-slate-700 text-lg">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-    </div>
-    <!-- النافذة المنبثقة للتسجيل والتوثيق متجاوبة مع الموبايل -->
-<div v-if="showRegisterModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 overflow-y-auto">
-  <div class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-2xl border border-slate-100 space-y-3 my-auto max-h-[90vh] overflow-y-auto">
-    
-    <!-- رأس النافذة -->
-    <div class="flex justify-between items-center border-b pb-2">
-      <div>
-        <h3 class="font-bold text-xs text-teal-800 flex items-center gap-1.5">
-          <i class="fa-solid fa-id-card text-amber-500"></i>
-          استكمال بيانات التسجيل والتوثيق للتمويل
-        </h3>
-        <p class="text-[10px] text-slate-500">أدخل بياناتك بدقة وأرفق المستندات المطلوبة لشريحة ({{ selectedTier.amount }} ريال)</p>
-      </div>
-      <button @click="showRegisterModal = false" class="text-slate-400 hover:text-slate-700 text-base cursor-pointer">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-    </div>
-
-    <!-- نموذج إدخال البيانات المنسق والمتجاوب -->
-    <form @submit.prevent="submitFinalApplication" class="space-y-2.5 text-xs">
-      <div>
-        <label class="block font-bold text-slate-700 mb-1">رقم الهوية الوطنية / الإقامة:</label>
-        <input type="text" required v-model="regForm.nationalId" placeholder="مثال: 10xxxxxxxx" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:border-teal-600">
-      </div>
-
-      <!-- تاريخ الميلاد والمدينة (عمودي في الموبايل، وعمودان في الشاشات الكبيرة) -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">تاريخ الميلاد:</label>
-          <input type="date" required v-model="regForm.birthDate" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:border-teal-600">
-        </div>
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">المدينة:</label>
-          <input type="text" required v-model="regForm.city" placeholder="مثال: الرياض" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:border-teal-600">
-        </div>
-      </div>
-
-      <!-- رقم الجوال والرقم السري (عمودي في الموبايل، وعمودان في الشاشات الكبيرة) -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">رقم الجوال:</label>
-          <input type="tel" required v-model="regForm.phone" placeholder="05xxxxxxxx" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:border-teal-600">
-        </div>
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">الرقم السري للحساب:</label>
-          <div class="relative">
-            <input :type="showPassword ? 'text' : 'password'" required v-model="regForm.password" placeholder="••••••••" class="w-full p-2.5 pl-10 border rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:border-teal-600">
-            <button type="button" @click="showPassword = !showPassword" class="absolute left-3 top-3 text-slate-400 hover:text-slate-600">
-              <i :class="showPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
+      <div v-if="showRegisterModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 overflow-y-auto">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-2xl border border-slate-100 space-y-3 my-auto max-h-[90vh] overflow-y-auto">
+          
+          <div class="flex justify-between items-center border-b pb-2">
+            <div>
+              <h3 class="font-bold text-xs text-teal-800 flex items-center gap-1.5">
+                <i class="fa-solid fa-id-card text-amber-500"></i>
+                استكمال بيانات التسجيل والتوثيق للتمويل
+              </h3>
+              <p class="text-[10px] text-slate-500">أدخل بياناتك بدقة وأرفق المستندات المطلوبة لشريحة ({{ selectedTier.tier_amount }} ريال)</p>
+            </div>
+            <button @click="showRegisterModal = false" class="text-slate-400 hover:text-slate-700 text-base cursor-pointer">
+              <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
+
+          <form @submit.prevent="submitFinalApplication" class="space-y-2.5 text-xs">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">رقم الهوية الوطنية / الإقامة:</label>
+              <input type="text" required v-model="regForm.nationalId" placeholder="مثال: 10xxxxxxxx" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:border-teal-600">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">تاريخ الميلاد:</label>
+                <input type="date" required v-model="regForm.birthDate" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:border-teal-600">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">المدينة:</label>
+                <input type="text" required v-model="regForm.city" placeholder="مثال: الرياض" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:border-teal-600">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">رقم الجوال:</label>
+                <input type="tel" required v-model="regForm.phone" placeholder="05xxxxxxxx" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:border-teal-600">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">الرقم السري للحساب:</label>
+                <div class="relative">
+                  <input :type="showPassword ? 'text' : 'password'" required v-model="regForm.password" placeholder="••••••••" class="w-full p-2.5 pl-10 border rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:border-teal-600">
+                  <button type="button" @click="showPassword = !showPassword" class="absolute left-3 top-3 text-slate-400 hover:text-slate-600 cursor-pointer">
+                    <i :class="showPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="border-t pt-2 space-y-2">
+              <h4 class="font-bold text-teal-800 text-[11px] flex items-center gap-1">
+                <i class="fa-solid fa-file-arrow-up"></i>
+                المستندات المطلوبة (حسب القطاع: {{ employmentSector === 'governmental' ? 'قطاع حكومي' : 'قطاع خاص' }})
+              </h4>
+
+              <template v-if="employmentSector === 'governmental'">
+                <div>
+                  <label class="block font-bold text-slate-600 mb-1">إرفاق تعريف بالراتب (PDF / صورة):</label>
+                  <input type="file" required @change="handleFileUpload($event, 'salaryDoc')" accept=".pdf,image/*" class="w-full p-2 border rounded-xl bg-slate-50 text-[11px] cursor-pointer">
+                </div>
+              </template>
+
+              <template v-else>
+                <div>
+                  <label class="block font-bold text-slate-600 mb-1">إرفاق شهادة مدد الأجور (تأمينات اجتماعية):</label>
+                  <input type="file" required @change="handleFileUpload($event, 'wagesDoc')" accept=".pdf,image/*" class="w-full p-2 border rounded-xl bg-slate-50 text-[11px] cursor-pointer">
+                </div>
+              </template>
+
+              <div>
+                <label class="block font-bold text-slate-600 mb-1">إرفاق تقرير سمة الائتماني (SIMAH):</label>
+                <input type="file" required @change="handleFileUpload($event, 'simahDoc')" accept=".pdf,image/*" class="w-full p-2 border rounded-xl bg-slate-50 text-[11px] cursor-pointer">
+              </div>
+            </div>
+
+            <button 
+              type="submit" 
+              :disabled="isProcessing"
+              class="w-full mt-3 bg-teal-700 hover:bg-teal-800 disabled:bg-slate-300 text-white font-bold py-3 rounded-xl text-xs transition-all flex justify-center items-center gap-2 shadow-md cursor-pointer"
+            >
+              <i v-if="isProcessing" class="fa-solid fa-circle-notch fa-spin"></i>
+              <span>{{ isProcessing ? 'جاري رفع الملفات وحفظ الطلب...' : 'إرسال الطلب للمراجعة (انتظار الموافقة)' }}</span>
+            </button>
+          </form>
         </div>
       </div>
-
-      <!-- رفع المستندات ديناميكياً حسب القطاع -->
-      <div class="border-t pt-2 space-y-2">
-        <h4 class="font-bold text-teal-800 text-[11px] flex items-center gap-1">
-          <i class="fa-solid fa-file-arrow-up"></i>
-          المستندات المطلوبة (حسب القطاع: {{ employmentSector === 'governmental' ? 'قطاع حكومي' : 'قطاع خاص' }})
-        </h4>
-
-        <template v-if="employmentSector === 'governmental'">
-          <div>
-            <label class="block font-bold text-slate-600 mb-1">إرفاق تعريف بالراتب (PDF / صورة):</label>
-            <input type="file" required @change="handleFileUpload($event, 'salaryDoc')" accept=".pdf,image/*" class="w-full p-2 border rounded-xl bg-slate-50 text-[11px]">
-          </div>
-        </template>
-
-        <template v-else>
-          <div>
-            <label class="block font-bold text-slate-600 mb-1">إرفاق شهادة مدد الأجور (تأمينات اجتماعية):</label>
-            <input type="file" required @change="handleFileUpload($event, 'wagesDoc')" accept=".pdf,image/*" class="w-full p-2 border rounded-xl bg-slate-50 text-[11px]">
-          </div>
-        </template>
-
-        <div>
-          <label class="block font-bold text-slate-600 mb-1">إرفاق تقرير سمة الائتماني (SIMAH):</label>
-          <input type="file" required @change="handleFileUpload($event, 'simahDoc')" accept=".pdf,image/*" class="w-full p-2 border rounded-xl bg-slate-50 text-[11px]">
-        </div>
-      </div>
-
-      <!-- زر إرسال الطلب النهائي -->
-      <button 
-        type="submit" 
-        :disabled="isProcessing"
-        class="w-full mt-3 bg-teal-700 hover:bg-teal-800 disabled:bg-slate-300 text-white font-bold py-3 rounded-xl text-xs transition-all flex justify-center items-center gap-2 shadow-md cursor-pointer"
-      >
-        <i v-if="isProcessing" class="fa-solid fa-circle-notch fa-spin"></i>
-        <span>{{ isProcessing ? 'جاري رفع الملفات وحفظ الطلب...' : 'إرسال الطلب للمراجعة (انتظار الموافقة)' }}</span>
-      </button>
-    </form>
-  </div>
-</div>
-  
-  </div>
-</div>
-
-
     </transition>
 
-
-<!-- تصميم رسالة الـ Toast العائمة -->
-<transition name="fade">
-  <div v-if="toast.show" :class="['fixed top-5 right-5 z-50 p-4 rounded-2xl text-xs font-bold text-white flex items-center justify-between shadow-2xl transition-all', toast.type === 'error' ? 'bg-rose-600' : 'bg-emerald-600']">
-    <span>{{ toast.message }}</span>
-    <button @click="toast.show = false" class="mr-4 text-white hover:opacity-80"><i class="fa-solid fa-xmark"></i></button>
-  </div>
-</transition>
+    <!-- Toast Notification -->
+    <transition name="fade">
+      <div v-if="toast.show" :class="['fixed top-5 right-5 z-50 p-4 rounded-2xl text-xs font-bold text-white flex items-center justify-between shadow-2xl transition-all', toast.type === 'error' ? 'bg-rose-600' : 'bg-emerald-600']">
+        <span>{{ toast.message }}</span>
+        <button @click="toast.show = false" class="mr-4 text-white hover:opacity-80 cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    </transition>
 
     <!-- Modal جدول الاستحقاق -->
     <transition name="modal-fade">
@@ -335,42 +303,44 @@
           <div class="flex justify-between items-center border-b pb-3">
             <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
               <i class="fa-solid fa-calendar-check text-teal-600"></i>
-              جدول استحقاق أقساط التمويل
+              جدول استحقاق أقساط الشريحة المحددة
             </h3>
-            <button @click="showModal = false" class="text-slate-400 hover:text-slate-700 text-lg"><i class="fa-solid fa-xmark"></i></button>
+            <button @click="showModal = false" class="text-slate-400 hover:text-slate-700 text-lg cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
           </div>
           <div class="space-y-2 max-h-64 overflow-y-auto pr-1 text-xs">
-            <div v-for="(inst, index) in generatedSchedule" :key="index" class="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-              <span class="font-bold text-slate-700">{{ inst.title }}</span>
-              <span class="font-extrabold text-teal-700">{{ inst.amount }} ريال</span>
+            <div class="p-2.5 rounded-xl bg-teal-50 border border-teal-100 flex justify-between items-center">
+              <span class="font-bold text-teal-900">القسط الأول (الشهر 1)</span>
+              <span class="font-extrabold text-teal-700">{{ selectedTier.first_installment }} ريال</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex justify-between items-center">
+              <span class="font-bold text-slate-700">الأقساط اللاحقة والدورية</span>
+              <span class="font-extrabold text-slate-800">{{ selectedTier.subsequent_installments_text }}</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-100 flex justify-between items-center">
+              <span class="font-bold text-amber-900">كلفة الأجل الإجمالية</span>
+              <span class="font-extrabold text-amber-800">{{ selectedTier.total_cost }} ريال</span>
             </div>
           </div>
-          <button @click="showModal = false" class="w-full bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs">إغلاق</button>
+          <button @click="showModal = false" class="w-full bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs cursor-pointer">إغلاق</button>
         </div>
       </div>
     </transition>
 
-
-
     <!-- أيقونة الواتساب العائمة -->
     <div class="fixed bottom-6 left-6 z-50 flex items-center group">
-  <!-- فقاعة النص التي تظهر عند الـ Hover -->
-  <div class="absolute left-16 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0 pointer-events-none whitespace-nowrap bg-white text-slate-800 text-xs font-bold px-3 py-2 rounded-xl shadow-lg border border-slate-100 flex items-center">
-    تواصل معنا عبر واتساب
-    <!-- سهم صغير موجه نحو الأيقونة -->
-    <div class="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-white border-r border-b border-slate-100 rotate-[-45deg]"></div>
-  </div>
-
-  <!-- أيقونة الواتساب الدائرية -->
-  <a 
-    href="https://wa.me/966564808583" 
-    target="_blank" 
-    class="w-12 h-12 bg-[#25D366] hover:bg-[#20ba5a] text-white rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-110 cursor-pointer"
-    title="تواصل معنا عبر واتساب"
-  >
-    <i class="fa-brands fa-whatsapp text-3xl"></i>
-  </a>
-</div>
+      <div class="absolute left-16 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0 pointer-events-none whitespace-nowrap bg-white text-slate-800 text-xs font-bold px-3 py-2 rounded-xl shadow-lg border border-slate-100 flex items-center">
+        تواصل معنا عبر واتساب
+        <div class="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-white border-r border-b border-slate-100 rotate-[-45deg]"></div>
+      </div>
+      <a 
+        href="https://wa.me/966564808583" 
+        target="_blank" 
+        class="w-12 h-12 bg-[#25D366] hover:bg-[#20ba5a] text-white rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-110 cursor-pointer"
+        title="تواصل معنا عبر واتساب"
+      >
+        <i class="fa-brands fa-whatsapp text-3xl"></i>
+      </a>
+    </div>
 
   </div>
 
@@ -395,18 +365,16 @@
         const isProcessing = ref(false);
         const isLoading = ref(true);
         const showModal = ref(false);
-        const generatedSchedule = ref([]);
         const showPassword = ref(false);
 
-        // تعريف متغيرات الـ Toast
-const toast = ref({ show: false, message: '', type: 'success' });
+        const toast = ref({ show: false, message: '', type: 'success' });
 
-const showNotification = (msg, type = 'success') => {
-  toast.value = { show: true, message: msg, type };
-  setTimeout(() => { 
-    toast.value.show = false; 
-  }, 4000);
-};
+        const showNotification = (msg, type = 'success') => {
+          toast.value = { show: true, message: msg, type };
+          setTimeout(() => { 
+            toast.value.show = false; 
+          }, 4000);
+        };
 
         const regForm = ref({
           nationalId: '',
@@ -427,50 +395,40 @@ const showNotification = (msg, type = 'success') => {
           selectedTier.value.dueDay = (employmentSector.value === 'governmental') ? 27 : 1;
         };
 
-      const selectTier = (item) => {
-  // حساب السداد المبكر تلقائياً بناءً على قيمة الشريحة (أصل المبلغ + 30% أو المعادلة المحددة)
-  const amountValue = Number(item.amount) || 0;
-  const earlySettlementCalc = amountValue + (amountValue * 0.30); // نسبة 30% أو القيمة المناسبة لمعادلة الأستاذ إبراهيم
+        const selectTier = (item) => {
+          selectedTier.value = {
+            ...item,
+            dueDay: employmentSector.value === 'governmental' ? 27 : 1
+          };
+        };
 
-  selectedTier.value = {
-    ...item,
-    amount: amountValue,
-    earlySettlement: earlySettlementCalc
-  };
-};
-
-        // أوامر Supabase: جلب الشرائح
+        // جلب الشرائح من Supabase متضمنة الحقول الجديدة (payment_path, early_settlement_first, subsequent_installments_text)
         const fetchTiersFromSupabase = async () => {
           isLoading.value = true;
-          if (supabaseClient) {
-            const { data, error } = await supabaseClient
-              .from('user_loans')
-              .select('*')
-              .order('tier_amount', { ascending: true });
+          try {
+            if (supabaseClient) {
+              const { data, error } = await supabaseClient
+                .from('user_loans')
+                .select('*')
+               .order('tier_amount', { ascending: true }) // ترتيب تصاعدي حسب المبلغ
+  .order('id', { ascending: true });
 
-            if (!error && data && data.length > 0) {
-              tiers.value = data.map(item => {
-                const amount = Number(item.tier_amount) || 0;
-                const totalCost = Number(item.total_cost) || 0;
-                const firstInst = Number(item.first_installment) || 0;
-                const months = Number(item.months_count) || 3;
-                const remaining = totalCost - firstInst;
-                const monthlyAmount = months > 0 ? (remaining / months).toFixed(2) : '0.00';
-
-                return {
-                  amount: amount,
-                  totalCost: totalCost,
-                  firstInstallment: firstInst,
-                  monthsCount: months,
-                  dueDay: employmentSector.value === 'governmental' ? 27 : 1,
-                  subsequentInstallments: `${monthlyAmount} ريال (${months} أشهر)`
+              if (error) {
+                console.error('Error fetching tiers:', error.message);
+                showNotification('خطأ في جلب الشرائح: ' + error.message, 'error');
+              } else if (data && data.length > 0) {
+                tiers.value = data;
+                selectedTier.value = {
+                  ...data[0],
+                  dueDay: employmentSector.value === 'governmental' ? 27 : 1
                 };
-              });
-              selectedTier.value = tiers.value[0];
-              updateDueDay();
+              }
             }
+          } catch (err) {
+            console.error('Unexpected error:', err);
+          } finally {
+            isLoading.value = false;
           }
-          isLoading.value = false;
         };
 
         const proceedToRegistration = () => {
@@ -485,26 +443,14 @@ const showNotification = (msg, type = 'success') => {
           }
         };
 
-// تفريغ النموذج بعد إرسال الطلب بنجاح
         const resetForm = () => {
-          regForm.value = {
-            nationalId: '',
-            birthDate: '',
-            city: '',
-            phone: '',
-            password: ''
-          };
-          uploadedFiles.value = {
-            salaryDoc: null,
-            wagesDoc: null,
-            simahDoc: null
-          };
+          regForm.value = { nationalId: '', birthDate: '', city: '', phone: '', password: '' };
+          uploadedFiles.value = { salaryDoc: null, wagesDoc: null, simahDoc: null };
         };
 
-// أوامر Supabase: رفع الملفات وإرسال البيانات مباشرة لقاعدة البيانات
         const submitFinalApplication = async () => {
           if (!regForm.value.nationalId || !regForm.value.phone || !regForm.value.password) {
-            alert('⚠️ الرجاء تعبئة جميع بيانات الحساب الأساسية.');
+            showNotification('⚠️ الرجاء تعبئة جميع بيانات الحساب الأساسية.', 'error');
             return;
           }
 
@@ -515,7 +461,6 @@ const showNotification = (msg, type = 'success') => {
             let simahUrl = '';
 
             if (supabaseClient) {
-              // 1. رفع الملفات إلى Supabase Storage (إذا تم تحديد ملفات)
               try {
                 const bucket = supabaseClient.storage.from('loan_documents');
 
@@ -550,11 +495,11 @@ const showNotification = (msg, type = 'success') => {
                 console.log('ملاحظة: تعذر رفع الملف لـ Storage، سيتم حفظ البيانات النصية فقط.', storageErr);
               }
 
-              // 2. إرسال البيانات كاملة للأعمدة الجديدة في Supabase
               const requestPayload = {
-                tier_amount: selectedTier.value.amount,
-                total_cost: selectedTier.value.totalCost,
-                first_installment: selectedTier.value.firstInstallment,
+                tier_amount: selectedTier.value.tier_amount,
+                total_cost: selectedTier.value.total_cost,
+                first_installment: selectedTier.value.first_installment,
+                payment_path: selectedTier.value.payment_path || '',
                 employment_sector: employmentSector.value,
                 national_id: regForm.value.nationalId,
                 phone: regForm.value.phone,
@@ -563,7 +508,7 @@ const showNotification = (msg, type = 'success') => {
                 simah_doc_url: simahUrl,
                 status: 'pending',
                 serious_fee_paid: false,
-                final_amount: selectedTier.value.totalCost
+                final_amount: selectedTier.value.total_cost
               };
 
               const { error } = await supabaseClient
@@ -572,11 +517,12 @@ const showNotification = (msg, type = 'success') => {
 
               if (error) throw error;
 
-showNotification('🎉 تم إرسال طلبك ومستنداتك بنجاح وحفظها في قاعدة البيانات!', 'success');              resetForm();
+              showNotification('🎉 تم إرسال طلبك ومستنداتك بنجاح وحفظها في قاعدة البيانات!', 'success');
+              resetForm();
               showRegisterModal.value = false;
             }
           } catch (err) {
-            alert('⚠️ حدث خطأ أثناء إرسال الطلب: ' + err.message);
+            showNotification('⚠️ حدث خطأ أثناء إرسال الطلب: ' + err.message, 'error');
           } finally {
             isProcessing.value = false;
             isAgreed.value = false;
@@ -584,18 +530,6 @@ showNotification('🎉 تم إرسال طلبك ومستنداتك بنجاح و
         };
 
         const openScheduleModal = () => {
-          const schedule = [];
-          const dueDay = selectedTier.value.dueDay || 27;
-          const firstInst = Number(selectedTier.value.firstInstallment) || 0;
-          const months = Number(selectedTier.value.monthsCount) || 3;
-          const totalRem = Number(selectedTier.value.totalCost) - firstInst;
-          const monthlyAmt = months > 0 ? (totalRem / months).toFixed(2) : 0;
-
-          schedule.push({ title: 'القسط الأول المباشر', amount: firstInst.toFixed(2) });
-          for (let i = 1; i <= months; i++) {
-            schedule.push({ title: `القسط الدوري (${i})`, amount: monthlyAmt });
-          }
-          generatedSchedule.value = schedule;
           showModal.value = true;
         };
 
@@ -611,7 +545,7 @@ showNotification('🎉 تم إرسال طلبك ومستنداتك بنجاح و
 
         return {
           tiers, selectedTier, employmentSector, isAgreed, showRegisterModal,
-          isProcessing, isLoading, showModal, generatedSchedule, regForm, showPassword,
+          isProcessing, isLoading, showModal, regForm, showPassword,
           selectTier, updateDueDay, proceedToRegistration, handleFileUpload,
           submitFinalApplication, openScheduleModal, fetchTiersFromSupabase, toast, showNotification
         };
