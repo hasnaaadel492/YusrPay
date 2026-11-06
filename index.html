@@ -38,6 +38,8 @@
     .modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.3s ease; }
     .modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
     @keyframes spin { to { transform: rotate(360deg); } }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen pb-16">
@@ -80,40 +82,85 @@
 
       <template v-else-if="tiers.length > 0">
         
-        <!-- 1. الشريحة ومسارات السداد (العرض الأصلي المباشر) -->
-        <div class="glass-card rounded-2xl p-4 shadow-sm space-y-3">
-          <h2 class="text-xs font-extrabold text-slate-700 flex items-center gap-1.5 mb-3">
-            <i class="fa-solid fa-layer-group text-teal-600"></i>
-            1. اختر شريحة التمويل ومسار السداد المناسب:
-          </h2>
-
-          <!-- شبكة جميع كروت الشرائح معروضة مباشرة -->
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-3">
-            <button 
-              v-for="(item, index) in tiers" 
-              :key="item.id || index"
-              @click="selectTier(item)"
-              :class="[
-                'p-3 rounded-xl text-right transition-all border flex flex-col justify-between gap-1.5 cursor-pointer relative overflow-hidden',
-                (selectedTier && selectedTier.id === item.id) 
-                  ? 'bg-teal-700 text-white border-teal-700 shadow-md scale-[1.02]' 
-                  : 'bg-white text-slate-700 border-slate-200 hover:border-teal-300'
-              ]"
-            >
-              <!-- شارة الشريحة المحددة -->
-           
-
-              <div class="flex justify-between items-center w-full">
-                <span class="font-black text-sm">{{ item.tier_amount }} <span class="text-[10px] font-normal">ريال</span></span>
-                <span class="text-[9px] px-2 py-0.5 rounded-md font-extrabold" :class="(selectedTier && selectedTier.id === item.id) ? 'bg-amber-400 text-slate-900' : 'bg-teal-50 text-teal-700'">
-                  {{ item.payment_path || 'مسار عام' }}
-                </span>
-              </div>
-              <div class="text-[10px] opacity-90">
-                القسط الأول: <span class="font-bold">{{ item.first_installment }} ريال</span>
-              </div>
-            </button>
+        <!-- 1. اختيار الشريحة ثم اختيار أنظمة الدفع (نموذج تمارا) -->
+        <div class="glass-card rounded-2xl p-4 shadow-sm space-y-4">
+          
+          <!-- أ) اختيار الشريحة بدون تكرار -->
+          <div>
+            <h2 class="text-xs font-extrabold text-slate-700 flex items-center gap-1.5 mb-2.5">
+              <i class="fa-solid fa-layer-group text-teal-600"></i>
+              1. اختر مبلغ التمويل المطلوب:
+            </h2>
+            <div class="grid grid-cols-5 gap-1.5">
+              <button 
+                v-for="amt in uniqueAmounts" 
+                :key="amt"
+                @click="selectAmount(amt)"
+                :class="[
+                  'py-2.5 px-1 rounded-xl text-xs font-black text-center transition-all border cursor-pointer',
+                  selectedAmount === amt 
+                    ? 'bg-teal-700 text-white border-teal-700 shadow-sm scale-[1.03]' 
+                    : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+                ]"
+              >
+                {{ amt }}<span class="text-[9px] font-normal block text-slate-400" :class="selectedAmount === amt ? 'text-teal-100' : ''">ريال</span>
+              </button>
+            </div>
           </div>
+
+          <!-- ب) أنظمة الدفع المتاحة للشريحة المختارة (نمط تمارا العمودي) -->
+          <div class="border-t pt-3 space-y-2">
+            <div class="flex justify-between items-center mb-1">
+              <h3 class="text-xs font-extrabold text-slate-700 flex items-center gap-1.5">
+                <i class="fa-solid fa-list-check text-teal-600"></i>
+                خطط وأنظمة التقسيط لشريحة ({{ selectedAmount }} ريال):
+              </h3>
+              <span class="text-[9px] bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded-md">اختر الخطة</span>
+            </div>
+
+            <div class="space-y-2">
+              <div 
+                v-for="(item, index) in availablePlansForSelectedAmount" 
+                :key="item.id || index"
+                @click="selectTier(item)"
+                :class="[
+                  'p-3.5 rounded-xl transition-all border flex items-center justify-between cursor-pointer relative',
+                  (selectedTier && selectedTier.id === item.id) 
+                    ? 'bg-teal-700 text-white border-teal-700 shadow-md ring-2 ring-teal-600/30' 
+                    : 'bg-white text-slate-800 border-slate-200 hover:border-teal-300 hover:bg-slate-50/50'
+                ]"
+              >
+                <!-- الجانب الأيمن: المسار والقسط الأول -->
+                <div class="flex items-center gap-3">
+                  <div :class="['w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs', (selectedTier && selectedTier.id === item.id) ? 'bg-amber-400 text-slate-900' : 'bg-teal-50 text-teal-700 border border-teal-100']">
+                    <i class="fa-solid fa-credit-card"></i>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span :class="['text-xs font-black px-2 py-0.5 rounded', (selectedTier && selectedTier.id === item.id) ? 'bg-amber-400 text-slate-900' : 'bg-slate-100 text-slate-700']">
+                        {{ item.payment_path || 'مسار عام' }}
+                      </span>
+                    </div>
+                    <p :class="['text-[11px] mt-1 font-semibold', (selectedTier && selectedTier.id === item.id) ? 'text-teal-100' : 'text-slate-600']">
+                      القسط الأول: <span class="font-bold text-xs">{{ item.first_installment }} ريال</span>
+                    </p>
+                  </div>
+                </div>
+
+                <!-- الجانب الأيسر: الإجمالي ومؤشر التحديد -->
+                <div class="flex items-center gap-2">
+                  <div class="text-left">
+                    <span :class="['block text-[9px]', (selectedTier && selectedTier.id === item.id) ? 'text-teal-100' : 'text-slate-400']">الإجمالي</span>
+                    <span class="font-extrabold text-xs">{{ item.total_cost }} ريال</span>
+                  </div>
+                  <div :class="['w-5 h-5 rounded-full border flex items-center justify-center text-xs', (selectedTier && selectedTier.id === item.id) ? 'bg-amber-400 border-amber-400 text-slate-900 font-bold' : 'border-slate-300 text-transparent']">
+                    <i class="fa-solid fa-check text-[10px]"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
 
         <!-- 2. قطاع التوظيف -->
@@ -135,11 +182,11 @@
         <div class="glass-card rounded-2xl p-5 shadow-sm space-y-4" v-if="selectedTier.tier_amount">
           <div class="flex justify-between items-center border-b pb-3 border-slate-100">
             <div>
-              <span class="text-xs text-slate-500 block font-bold">أصل قيمة التمويل</span>
+              <span class="text-xs text-slate-500 block font-bold">أصل قيمة التمويل المختارة</span>
               <span class="text-xl font-extrabold text-teal-700">{{ selectedTier.tier_amount }} ريال</span>
             </div>
             <div class="text-left">
-              <span class="text-xs text-slate-500 block font-bold"> السداد المبكر</span>
+              <span class="text-xs text-slate-500 block font-bold">السداد المبكر</span>
               <span class="text-base font-bold text-slate-700">
                 {{ selectedTier.early_settlement_first || (Number(selectedTier.tier_amount) * 1.30).toFixed(2) }} ريال
               </span>
@@ -349,7 +396,7 @@
   </div>
 
   <script>
-    const { createApp, ref, onMounted } = Vue;
+    const { createApp, ref, onMounted, computed } = Vue;
 
     const SUPABASE_URL = 'https://kdmlkhlceihidcmwdhxi.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_G5uoFE-wczB6h1YeBAt__g_0ktNTptG';
@@ -363,6 +410,7 @@
       setup() {
         const tiers = ref([]);
         const selectedTier = ref({});
+        const selectedAmount = ref(1000); // المبلغ المحدد حالياً (مثال: 1000)
         const employmentSector = ref('governmental');
         const isAgreed = ref(false);
         const showRegisterModal = ref(false);
@@ -378,6 +426,33 @@
           setTimeout(() => { 
             toast.value.show = false; 
           }, 4000);
+        };
+
+        // المبالغ المتاحة بدون تكرار إطلاقاً (1000, 1500, 2000, 2500, 3000)
+        const uniqueAmounts = computed(() => {
+          const amounts = tiers.value.map(t => Number(t.tier_amount));
+          return [...new Set(amounts)].sort((a, b) => a - b);
+        });
+
+        // الأنظمة والخطط المتاحة للمبلغ المحدد فقط (تمارا)
+        const availablePlansForSelectedAmount = computed(() => {
+          return tiers.value.filter(t => Number(t.tier_amount) === Number(selectedAmount.value));
+        });
+
+        const selectAmount = (amt) => {
+          selectedAmount.value = amt;
+          // تفعيل أو تحديد أول خطة تلقائياً للمبلغ المختار
+          const plans = availablePlansForSelectedAmount.value;
+          if (plans.length > 0) {
+            selectTier(plans[0]);
+          }
+        };
+
+        const selectTier = (item) => {
+          selectedTier.value = {
+            ...item,
+            dueDay: employmentSector.value === 'governmental' ? 27 : 1
+          };
         };
 
         const regForm = ref({
@@ -399,14 +474,7 @@
           selectedTier.value.dueDay = (employmentSector.value === 'governmental') ? 27 : 1;
         };
 
-        const selectTier = (item) => {
-          selectedTier.value = {
-            ...item,
-            dueDay: employmentSector.value === 'governmental' ? 27 : 1
-          };
-        };
-
-        // جلب الشرائح من Supabase مرتبة تصاعدياً مباشرة
+        // جلب الشرائح من Supabase مرتبة تصاعدياً
         const fetchTiersFromSupabase = async () => {
           isLoading.value = true;
           try {
@@ -414,7 +482,7 @@
               const { data, error } = await supabaseClient
                 .from('user_loans')
                 .select('*')
-                .order('tier_amount', { ascending: true }) // ترتيب تصاعدي حسب المبلغ
+                .order('tier_amount', { ascending: true })
                 .order('id', { ascending: true });
 
               if (error) {
@@ -422,6 +490,8 @@
                 showNotification('خطأ في جلب الشرائح: ' + error.message, 'error');
               } else if (data && data.length > 0) {
                 tiers.value = data;
+                // تعيين أول مبلغ وأول خيار افتراضياً
+                selectedAmount.value = Number(data[0].tier_amount);
                 selectedTier.value = {
                   ...data[0],
                   dueDay: employmentSector.value === 'governmental' ? 27 : 1
@@ -550,6 +620,9 @@
         return {
           tiers, 
           selectedTier, 
+          selectedAmount,
+          uniqueAmounts,
+          availablePlansForSelectedAmount,
           employmentSector, 
           isAgreed, 
           showRegisterModal,
@@ -558,6 +631,7 @@
           showModal, 
           regForm, 
           showPassword,
+          selectAmount,
           selectTier, 
           updateDueDay, 
           proceedToRegistration, 
