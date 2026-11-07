@@ -106,7 +106,7 @@
             </div>
           </div>
 
-          <!-- ب) كروت خطط الدفع (مع ظهور الأقساط اللاحقة تحت الخطة المختارة مباشرة) -->
+          <!-- ب) كروت خطط الدفع مع العرض الرأسي الدقيق للأقساط -->
           <div class="border-t pt-3 space-y-2.5">
             <h3 class="text-xs font-extrabold text-slate-700 mb-2">
               خطط الدفع لشريحة ({{ selectedAmount }} ريال):
@@ -144,13 +144,29 @@
                   </div>
                 </div>
 
-                <!-- صندوق الأقساط اللاحقة والدورية المطلوبة تحت الخطة المختارة مباشرة -->
+                <!-- صندوق الأقساط اللاحقة والدورية بشكل رأسي مفصل لكل شهر بدون قسمة خاطئة -->
                 <div 
                   v-if="selectedTier && selectedTier.id === item.id" 
-                  class="bg-white p-3 rounded-2xl border border-teal-200 flex justify-between items-center text-xs shadow-sm mx-1"
+                  class="bg-white p-3.5 rounded-2xl border border-teal-200 space-y-2 text-xs shadow-sm mx-1"
                 >
-                  <span class="text-slate-700 font-bold">الأقساط اللاحقة والدورية</span>
-                  <span class="font-extrabold text-slate-900">{{ selectedTier.subsequent_installments_text || 'حسب الجدول المعتمد' }}</span>
+                  <div class="font-bold text-teal-800 border-b pb-1.5 mb-1 flex items-center justify-between">
+                    <span>تفاصيل الأقساط اللاحقة والدورية (لكل شهر):</span>
+                    <i class="fa-solid fa-list-ol text-teal-600"></i>
+                  </div>
+                  
+                  <div class="space-y-1.5 font-bold text-slate-700">
+                    <!-- الشهر الأول -->
+                    <div class="bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 flex justify-between items-center text-slate-800">
+                      <span>الشهر الأول</span>
+                      <span class="font-extrabold text-teal-700">{{ item.first_installment }} ريال</span>
+                    </div>
+
+                    <!-- عرض الأقساط اللاحقة مفرودة لكل شهر كما هي قيمتها الفعلية -->
+                    <div v-for="(val, idx) in getExactInstallments(item)" :key="idx" class="bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 flex justify-between items-center text-slate-800">
+                      <span>الشهر {{ idx + 2 }}</span>
+                      <span class="font-extrabold text-slate-900">{{ val }} ريال</span>
+                    </div>
+                  </div>
                 </div>
 
               </div>
@@ -188,8 +204,8 @@
               </span>
             </div>
           </div>
-
-          <!-- <div class="grid grid-cols-1 gap-3 text-xs">
+<!-- 
+          <div class="grid grid-cols-1 gap-3 text-xs">
             <div class="bg-amber-50/60 p-3 rounded-xl border border-amber-200/60 flex justify-between items-center">
               <span class="text-amber-800 font-bold">القسط الأول (يوم {{ selectedTier.dueDay || 27 }})</span>
               <span class="font-black text-amber-900 text-sm">{{ Number(selectedTier.first_installment).toFixed(2) }} ريال</span>
@@ -399,6 +415,38 @@
           return pathText;
         };
 
+        // دالة لعرض القيم الفعلية للأقساط دون قسمة مركبة، مع إفرازها بشكل مستقل
+        const getExactInstallments = (item) => {
+          if (!item.subsequent_installments_text) return [];
+          
+          const matches = item.subsequent_installments_text.match(/\d+(\.\d+)?/g);
+          if (!matches) return [item.subsequent_installments_text];
+
+          let amounts = [];
+          matches.forEach(m => {
+            if (Number(m) > 10) {
+              amounts.push(m);
+            }
+          });
+
+          // إذا كان المبلغ ثابتاً ومكرراً لعدة أشهر، نقوم بعرضه بعدد الشهور المطلوبة (مثلاً 3 أشهر لاحقة بقيمة 610.83 لكل شهر)
+          let targetMonths = 3;
+          if (item.payment_path && item.payment_path.includes('3')) {
+            targetMonths = 2;
+          }
+
+          if (amounts.length === 1 && targetMonths > 1) {
+            let singleVal = amounts[0];
+            let result = [];
+            for (let i = 0; i < targetMonths; i++) {
+              result.push(singleVal);
+            }
+            return result;
+          }
+
+          return amounts.length > 0 ? amounts : [item.subsequent_installments_text];
+        };
+
         const selectAmount = (amt) => {
           selectedAmount.value = amt;
           const plans = availablePlansForSelectedAmount.value;
@@ -584,6 +632,7 @@
           regForm, 
           showPassword,
           getInstallmentBadge,
+          getExactInstallments,
           selectAmount,
           selectTier, 
           updateDueDay, 
