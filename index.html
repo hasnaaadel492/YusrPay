@@ -60,7 +60,7 @@
           <i class="fa-solid fa-hand-holding-dollar text-2xl text-amber-400"></i>
           <div>
             <h1 class="font-bold text-lg leading-tight">منصة مُهْلَة للتمويل الرقمي</h1>
-            <p class="text-xs text-teal-100">تمويل ميسر وتقسيط مرن</p>
+            <p class="text-xs text-teal-100">تمويل ميسر وتقسيط مرن وفق المنطق المطور</p>
           </div>
         </div>
         <button @click="fetchTiersFromSupabase" class="bg-teal-700 hover:bg-teal-600 text-xs px-3 py-1.5 rounded-full font-semibold flex items-center gap-1.5 border border-teal-500 cursor-pointer">
@@ -83,7 +83,7 @@
         <!-- 1. اختيار الشريحة ثم خطط الدفع -->
         <div class="glass-card rounded-2xl p-4 shadow-sm space-y-4">
           
-          <!-- أ) المبالغ بدون تكرار -->
+          <!-- أ) المبالغ الأساسية بدون تكرار -->
           <div>
             <h2 class="text-xs font-extrabold text-slate-700 flex items-center gap-1.5 mb-2.5">
               <i class="fa-solid fa-layer-group text-teal-600"></i>
@@ -133,18 +133,18 @@
                       {{ item.first_installment }} <span class="text-xs font-bold text-slate-600">ريال \ شهرياً</span>
                     </div>
                     <span class="text-[10px] text-slate-400 font-semibold block mt-0.5">
-                      {{ item.payment_path.includes('ربح') ? 'قد تشمل رسوم أرباح' : 'بدون رسوم إضافية' }}
+                      {{ (item.payment_path && item.payment_path.includes('ربح')) ? 'قد تشمل رسوم أرباح' : 'بدون رسوم إضافية' }}
                     </span>
                   </div>
 
                   <div>
                     <span class="bg-teal-50 text-teal-800 font-extrabold text-xs px-3 py-1.5 rounded-xl border border-teal-100">
-                      {{ getInstallmentBadge(item.payment_path) }}
+                      {{ item.installments_count }} دفعات
                     </span>
                   </div>
                 </div>
 
-                <!-- صندوق الأقساط اللاحقة والدورية بشكل رأسي مفصل لكل شهر بدون قسمة خاطئة -->
+                <!-- صندوق الأقساط اللاحقة والدورية بشكل رأسي منظم بناءً على القيم الصافية -->
                 <div 
                   v-if="selectedTier && selectedTier.id === item.id" 
                   class="bg-white p-3.5 rounded-2xl border border-teal-200 space-y-2 text-xs shadow-sm mx-1"
@@ -161,10 +161,10 @@
                       <span class="font-extrabold text-teal-700">{{ item.first_installment }} ريال</span>
                     </div>
 
-                    <!-- عرض الأقساط اللاحقة مفرودة لكل شهر كما هي قيمتها الفعلية -->
-                    <div v-for="(val, idx) in getExactInstallments(item)" :key="idx" class="bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 flex justify-between items-center text-slate-800">
-                      <span>الشهر {{ idx + 2 }}</span>
-                      <span class="font-extrabold text-slate-900">{{ val }} ريال</span>
+                    <!-- عرض الأقساط اللاحقة بناءً على القيم الصافية المفصولة -->
+                    <div v-for="i in (item.installments_count - 1)" :key="i" class="bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 flex justify-between items-center text-slate-800">
+                      <span>الشهر {{ i + 1 }}</span>
+                      <span class="font-extrabold text-slate-900">{{ getSubsequentInstallmentValue(item, i - 1) }} ريال</span>
                     </div>
                   </div>
                 </div>
@@ -190,7 +190,7 @@
           </div>
         </div>
 
-        <!-- 3. تفاصيل التمويل والسداد المبكر (في موضعها السابق بالأسفل) -->
+        <!-- 3. تفاصيل التمويل والسداد المبكر -->
         <div class="glass-card rounded-2xl p-5 shadow-sm space-y-4" v-if="selectedTier.tier_amount">
           <div class="flex justify-between items-center border-b pb-3 border-slate-100">
             <div>
@@ -198,19 +198,12 @@
               <span class="text-xl font-extrabold text-teal-700">{{ selectedTier.tier_amount }} ريال</span>
             </div>
             <div class="text-left">
-              <span class="text-xs text-slate-500 block font-bold">السداد المبكر</span>
+              <span class="text-xs text-slate-500 block font-bold">التسوية المبكرة (يوم 27 الأول)</span>
               <span class="text-base font-bold text-slate-700">
-                {{ selectedTier.early_settlement_first || (Number(selectedTier.tier_amount) * 1.30).toFixed(2) }} ريال
+                {{ selectedTier.early_settlement_first }} ريال
               </span>
             </div>
           </div>
-<!-- 
-          <div class="grid grid-cols-1 gap-3 text-xs">
-            <div class="bg-amber-50/60 p-3 rounded-xl border border-amber-200/60 flex justify-between items-center">
-              <span class="text-amber-800 font-bold">القسط الأول (يوم {{ selectedTier.dueDay || 27 }})</span>
-              <span class="font-black text-amber-900 text-sm">{{ Number(selectedTier.first_installment).toFixed(2) }} ريال</span>
-            </div>
-          </div> -->
 
           <!-- قانون التسوية المبكرة وإسقاط الأرباح -->
           <div class="p-3 bg-slate-50 border rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-3 text-xs">
@@ -407,44 +400,12 @@
           return tiers.value.filter(t => Number(t.tier_amount) === Number(selectedAmount.value));
         });
 
-        const getInstallmentBadge = (pathText) => {
-          if (!pathText) return 'دفعات ميسرة';
-          if (pathText.includes('3')) return '3 دفعات';
-          if (pathText.includes('4')) return '4 دفعات';
-          if (pathText.includes('5')) return '5 دفعات';
-          return pathText;
-        };
-
-        // دالة لعرض القيم الفعلية للأقساط دون قسمة مركبة، مع إفرازها بشكل مستقل
-        const getExactInstallments = (item) => {
-          if (!item.subsequent_installments_text) return [];
-          
-          const matches = item.subsequent_installments_text.match(/\d+(\.\d+)?/g);
-          if (!matches) return [item.subsequent_installments_text];
-
-          let amounts = [];
-          matches.forEach(m => {
-            if (Number(m) > 10) {
-              amounts.push(m);
-            }
-          });
-
-          // إذا كان المبلغ ثابتاً ومكرراً لعدة أشهر، نقوم بعرضه بعدد الشهور المطلوبة (مثلاً 3 أشهر لاحقة بقيمة 610.83 لكل شهر)
-          let targetMonths = 3;
-          if (item.payment_path && item.payment_path.includes('3')) {
-            targetMonths = 2;
-          }
-
-          if (amounts.length === 1 && targetMonths > 1) {
-            let singleVal = amounts[0];
-            let result = [];
-            for (let i = 0; i < targetMonths; i++) {
-              result.push(singleVal);
-            }
-            return result;
-          }
-
-          return amounts.length > 0 ? amounts : [item.subsequent_installments_text];
+        // دالة لجلب القيمة الصافية للقسط اللاحق لكل شهر
+        const getSubsequentInstallmentValue = (item, monthIndex) => {
+          if (!item.subsequent_installments_text) return '';
+          const str = String(item.subsequent_installments_text);
+          const values = str.split(',').map(v => v.trim());
+          return values[monthIndex] || values[0] || str;
         };
 
         const selectAmount = (amt) => {
@@ -574,10 +535,13 @@
                 console.log('ملاحظة: تعذر رفع الملف لـ Storage، سيتم حفظ البيانات النصية فقط.', storageErr);
               }
 
+              // تنظيف القسط الأول لضمان إرسال رقم صافي فقط لقاعدة البيانات
+              const cleanFirstInstallment = parseFloat(selectedTier.value.first_installment) || 0;
+
               const requestPayload = {
                 tier_amount: selectedTier.value.tier_amount,
                 total_cost: selectedTier.value.total_cost,
-                first_installment: selectedTier.value.first_installment,
+                first_installment: cleanFirstInstallment,
                 payment_path: selectedTier.value.payment_path || '',
                 employment_sector: employmentSector.value,
                 national_id: regForm.value.nationalId,
@@ -631,8 +595,7 @@
           isLoading, 
           regForm, 
           showPassword,
-          getInstallmentBadge,
-          getExactInstallments,
+          getSubsequentInstallmentValue,
           selectAmount,
           selectTier, 
           updateDueDay, 

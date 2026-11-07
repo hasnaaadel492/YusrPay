@@ -101,7 +101,7 @@
             <button @click="confirmDelete" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-xl transition-all text-xs shadow-md">
               نعم، احذف
             </button>
-            <button @click="deleteModal.show = false" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition-all text-xs">
+            <button @click="deleteModal.show = false" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition-all">
               إلغاء
             </button>
           </div>
@@ -116,120 +116,130 @@
         </div>
       </transition>
 
-      <!-- Add / Edit Tier Form -->
+      <!-- Add / Edit Tier Form (المحسن والمطابق تماماً للجدول المطور) -->
       <div :class="['rounded-2xl p-5 shadow-sm border transition-all', isEditing ? 'bg-amber-50/50 border-amber-200' : 'bg-white border-slate-200']">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-sm font-bold flex items-center gap-2" :class="isEditing ? 'text-amber-700' : 'text-slate-800'">
             <i :class="['fa-solid', isEditing ? 'fa-pen-to-square text-amber-600' : 'fa-plus-circle text-teal-600']"></i>
-            <span>{{ isEditing ? 'تعديل شريحة التمويل المحددة' : 'إضافة شريحة تمويل جديدة' }}</span>
+            <span>{{ isEditing ? 'تعديل شريحة التمويل المحددة' : 'إضافة شريحة تمويل جديدة (وفق المنطق المالي المطور)' }}</span>
           </h2>
         </div>
 
-          <form @submit.prevent="saveTier" class="space-y-4 text-xs bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+        <form @submit.prevent="saveTier" class="space-y-4 text-xs bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">مبلغ الشريحة الأساسي (ريال)</label>
+              <input 
+                v-model.number="form.tier_amount" 
+                type="number" 
+                step="any" 
+                required 
+                placeholder="مثال: 1500" 
+                class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all"
+              >
+              <span class="text-[10px] text-slate-400 mt-1 block">القيمة الأساسية للتمويل المطلوب.</span>
+            </div>
+            
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">كلفة الأجل الإجمالية (ريال)</label>
+              <input 
+                v-model.number="form.total_cost" 
+                type="number" 
+                step="any" 
+                required
+                placeholder="مثال: 2640" 
+                class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all"
+              >
+              <span class="text-[10px] text-slate-400 mt-1 block">إجمالي المبلغ المستحق بانتهاء كافة الأقساط.</span>
+            </div>
 
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">إجمالي عدد الدفعات (الأشهر)</label>
+              <input 
+                v-model.number="form.installments_count" 
+                type="number" 
+                min="2" 
+                max="12" 
+                required 
+                placeholder="مثال: 4" 
+                class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all font-bold text-teal-800"
+              >
+              <span class="text-[10px] text-slate-400 mt-1 block">عدد الدفعات الكلي </span>
+            </div>
+          </div>
 
-  <div class="grid grid-cols-2 gap-4">
-    <div>
-      <label class="font-bold text-slate-700 block mb-1">مبلغ الشريحة الأساسي (ريال)</label>
-      <input 
-        v-model.number="form.tier_amount" 
-        @input="!isEditing && (form.total_cost = form.tier_amount ? Number((form.tier_amount * 1.30).toFixed(2)) : '')" 
-        type="number" 
-        step="any" 
-        required 
-        placeholder="مثال: 2000 (أصل التمويل)" 
-        class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all"
-      >
-      <span class="text-[10px] text-slate-400 mt-1 block">القيمة الأساسية للتمويل المطلوب.</span>
-    </div>
-    
-    <div>
-      <label class="font-bold text-slate-700 block mb-1">كلفة الأجل الإجمالية (ريال)</label>
-      <input 
-        v-model.number="form.total_cost" 
-        type="number" 
-        step="any" 
-        required
-        placeholder="مثال: 3162.5" 
-        class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all"
-      >
-      <span class="text-[10px] text-slate-400 mt-1 block">إجمالي المبلغ المستحق بانتهاء الأقساط.</span>
-    </div>
-  </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">خيار السداد والمسار الزمني</label>
+              <input 
+                v-model="form.payment_path" 
+                type="text" 
+                required 
+                placeholder="مثال: ثابت 4 أشهر / خيار 4 أشهر (ربح 40%)" 
+                class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all"
+              >
+              <span class="text-[10px] text-slate-400 mt-1 block">وصف المسار ومدة الأقساط ونسبة الأرباح.</span>
+            </div>
 
-  <div class="grid grid-cols-2 gap-4">
-    <div>
-      <label class="font-bold text-slate-700 block mb-1">خيار السداد والمسار الزمني</label>
-      <input 
-        v-model="form.payment_path" 
-        type="text" 
-        required 
-        placeholder="مثال: خيار 4 أشهر (ربح 40%) أو ثابت 3 أشهر" 
-        class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all"
-      >
-      <span class="text-[10px] text-slate-400 mt-1 block">وصف المسار أو مدة الأقساط مع نسبة الأرباح.</span>
-    </div>
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">التسوية المبكرة (الشهر الأول / يوم 27)</label>
+              <input 
+                v-model.number="form.early_settlement_first" 
+                type="number" 
+                step="any" 
+                required 
+                placeholder="مثال: 1950" 
+                class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all"
+              >
+              <span class="text-[10px] text-slate-400 mt-1 block">مبلغ السداد المبكر في اليوم 27 من الشهر الأول.</span>
+            </div>
+          </div>
 
-    <div>
-      <label class="font-bold text-slate-700 block mb-1">التسوية المبكرة (الشهر الأول / يوم 27)</label>
-      <input 
-        v-model.number="form.early_settlement_first" 
-        type="number" 
-        step="any" 
-        required 
-        placeholder="مثال: 2600" 
-        class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all"
-      >
-      <span class="text-[10px] text-slate-400 mt-1 block">مبلغ السداد المبكر في حال سدد العميل مبكراً.</span>
-    </div>
-  </div>
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">قيمة القسط الأول (الشهر 1)</label>
+              <input 
+                v-model="form.first_installment" 
+                type="text" 
+                required 
+                placeholder="مثال: 850 ريال أو 970 ريال (الأرباح شاملة)" 
+                class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all"
+              >
+              <span class="text-[10px] text-slate-400 mt-1 block">المبلغ المستحق في الشهر الأول.</span>
+            </div>
 
-  <div class="grid grid-cols-3 gap-4">
-    <div>
-      <label class="font-bold text-slate-700 block mb-1">قيمة القسط الأول (الشهر 1)</label>
-      <input 
-        v-model.number="form.first_installment" 
-        type="number" 
-        step="any" 
-        required 
-        placeholder="مثال: 1350" 
-        class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all"
-      >
-      <span class="text-[10px] text-slate-400 mt-1 block">المبلغ المستحق في الشهر الأول.</span>
-    </div>
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">تفاصيل الأقساط اللاحقة والدورية</label>
+              <input 
+                v-model="form.subsequent_installments_text" 
+                type="text" 
+                required 
+                placeholder="مثال: 596.67 (لمدة 3 أشهر) أو الشهر 2 (696) الشهر 3 (300)" 
+                class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all"
+              >
+              <span class="text-[10px] text-slate-400 mt-1 block">نص مرن يقبل المبالغ الثابتة أو المركبة.</span>
+            </div>
 
-    <div>
-      <label class="font-bold text-slate-700 block mb-1">تفاصيل الأقساط اللاحقة والدورية</label>
-      <input 
-        v-model="form.subsequent_installments_text" 
-        type="text" 
-        required 
-        placeholder="مثال: 610.83 (لمدة 3 أشهر)" 
-        class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all"
-      >
-      <span class="text-[10px] text-slate-400 mt-1 block">قيمة الأقساط للأشهر المتبقية.</span>
-    </div>
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">يوم الاستحقاق الافتراضي</label>
+              <select v-model.number="form.due_day" required class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all text-xs font-bold text-slate-800">
+                <option :value="27">يوم 27 (قطاع حكومي)</option>
+                <option :value="1">يوم 1 (قطاع خاص / متقاعد)</option>
+              </select>
+              <span class="text-[10px] text-slate-400 mt-1 block">تاريخ سداد القسط الشهري</span>
+            </div>
+          </div>
 
-    <div>
-      <label class="font-bold text-slate-700 block mb-1">يوم الاستحقاق الافتراضي</label>
-      <select v-model.number="form.due_day" required class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all text-xs font-bold text-slate-800">
-        <option :value="27">يوم 27 (قطاع حكومي)</option>
-        <option :value="1">يوم 1 (قطاع خاص / متقاعد)</option>
-      </select>
-      <span class="text-[10px] text-slate-400 mt-1 block">تاريخ سداد القسط الشهري.</span>
-    </div>
-  </div>
-
-  <div class="flex gap-2 pt-3">
-    <button type="submit" :disabled="isSubmitting" :class="['flex-1 text-white font-bold py-3 rounded-xl transition-all shadow flex justify-center items-center gap-2', isEditing ? 'bg-amber-600 hover:bg-amber-700' : 'bg-teal-700 hover:bg-teal-800']">
-      <i v-if="isSubmitting" class="fa-solid fa-circle-notch fa-spin"></i>
-      <span>{{ isSubmitting ? 'جاري الحفظ...' : (isEditing ? 'حفظ التعديلات' : 'إضافة الشريحة لقاعدة البيانات') }}</span>
-    </button>
-    <button v-if="isEditing" type="button" @click="cancelEdit" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-3 rounded-xl transition-all">
-      إلغاء
-    </button>
-  </div>
-</form>
+          <div class="flex gap-2 pt-3">
+            <button type="submit" :disabled="isSubmitting" :class="['flex-1 text-white font-bold py-3 rounded-xl transition-all shadow flex justify-center items-center gap-2', isEditing ? 'bg-amber-600 hover:bg-amber-700' : 'bg-teal-700 hover:bg-teal-800']">
+              <i v-if="isSubmitting" class="fa-solid fa-circle-notch fa-spin"></i>
+              <span>{{ isSubmitting ? 'جاري الحفظ...' : (isEditing ? 'حفظ التعديلات' : 'إضافة الشريحة لقاعدة البيانات') }}</span>
+            </button>
+            <button v-if="isEditing" type="button" @click="cancelEdit" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-3 rounded-xl transition-all">
+              إلغاء
+            </button>
+          </div>
+        </form>
       </div>
 
       <!-- Active Tiers Table -->
@@ -250,43 +260,46 @@
         </div>
 
         <div v-else class="divide-y text-xs">
-        <div v-for="t in tiers" :key="t.id" class="py-3 px-4 mb-2 bg-white border border-slate-100 rounded-xl shadow-sm flex justify-between items-center">
-  <div>
-    <div class="flex items-center gap-2 mb-1">
-      <span class="font-extrabold text-teal-800 text-sm">{{ t.tier_amount }} ريال</span>
-      <span class="bg-teal-50 text-teal-700 text-[10px] font-bold px-2 py-0.5 rounded-md border border-teal-200">
-        {{ t.payment_path || 'مسار عام' }}
-      </span>
-    </div>
-    <div class="text-slate-500 text-xs space-x-reverse space-x-2">
-      <span>الإجمالي: <strong class="text-slate-700">{{ t.total_cost }} ريال</strong></span>
-      <span>|</span>
-      <span>التسوية المبكرة: <strong class="text-slate-700">{{ t.early_settlement_first }} ريال</strong></span>
-      <span>|</span>
-      <span>القسط الأول: <strong class="text-slate-700">{{ t.first_installment }} ريال</strong></span>
-      <span>|</span>
-      <span>الأقساط: <strong class="text-slate-700">{{ t.subsequent_installments_text }}</strong></span>
-    </div>
-  </div>
+          <div v-for="t in tiers" :key="t.id" class="py-3 px-4 mb-2 bg-white border border-slate-100 rounded-xl shadow-sm flex justify-between items-center">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="font-extrabold text-teal-800 text-sm">{{ t.tier_amount }} ريال</span>
+                <span class="bg-teal-50 text-teal-700 text-[10px] font-bold px-2 py-0.5 rounded-md border border-teal-200">
+                  {{ t.payment_path || 'مسار عام' }}
+                </span>
+                <span class="bg-amber-50 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-md border border-amber-200">
+                  {{ t.installments_count }} دفعات
+                </span>
+              </div>
+              <div class="text-slate-500 text-xs space-x-reverse space-x-2">
+                <span>الإجمالي: <strong class="text-slate-700">{{ t.total_cost }} ريال</strong></span>
+                <span>|</span>
+                <span>التسوية المبكرة: <strong class="text-slate-700">{{ t.early_settlement_first }} ريال</strong></span>
+                <span>|</span>
+                <span>القسط الأول: <strong class="text-slate-700">{{ t.first_installment }}</strong></span>
+                <span>|</span>
+                <span>الأقساط اللاحقة: <strong class="text-slate-700">{{ t.subsequent_installments_text }}</strong></span>
+              </div>
+            </div>
 
-  <div class="flex gap-2">
-    <button @click="editTier(t)" class="text-amber-700 font-bold bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg border border-amber-200 transition-all text-xs flex items-center gap-1">
-      <i class="fa-solid fa-pen-to-square"></i> تعديل
-    </button>
-    <button @click="deleteTier(t.id)" class="text-rose-600 font-bold bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg transition-all text-xs">
-      حذف
-    </button>
-  </div>
-</div>
+            <div class="flex gap-2">
+              <button @click="editTier(t)" class="text-amber-700 font-bold bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg border border-amber-200 transition-all text-xs flex items-center gap-1">
+                <i class="fa-solid fa-pen-to-square"></i> تعديل
+              </button>
+              <button @click="deleteTier(t.id)" class="text-rose-600 font-bold bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg transition-all text-xs">
+                حذف
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Customer Loan Requests Section (Updated with client details & files) -->
+      <!-- Customer Loan Requests Section -->
       <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-xs font-bold text-slate-700 flex items-center gap-2">
             <i class="fa-solid fa-clipboard-list text-teal-600"></i>
-            طلبات التمويل الواردة من العملاء (متابعة البيانات والمستندات):
+            طلبات التمويل الواردة من العملاء:
           </h3>
           <button @click="fetchLoanRequests" class="text-xs text-teal-700 hover:underline font-bold flex items-center gap-1">
             <i class="fa-solid fa-rotate"></i> تحديث الطلبات
@@ -307,7 +320,7 @@
               <tr class="bg-slate-50 text-slate-600 border-b">
                 <th class="p-2.5">رقم الطلب</th>
                 <th class="p-2.5">الشريحة</th>
-                <th class="p-2.5">خيار السداد و المسار</th>
+                <th class="p-2.5">خيار السداد والمسار</th>
                 <th class="p-2.5">القطاع</th>
                 <th class="p-2.5">بيانات العميل</th>
                 <th class="p-2.5">الإجمالي</th>
@@ -319,7 +332,7 @@
               <tr v-for="req in loanRequests" :key="req.id" class="hover:bg-slate-50/80">
                 <td class="p-2.5 font-bold text-teal-800">#{{ req.id }}</td>
                 <td class="p-2.5 font-bold">{{ req.tier_amount }} ريال</td>
-                <td class="p-2.5 font-bold">{{ req.payment_path }} </td>
+                <td class="p-2.5 font-bold">{{ req.payment_path }}</td>
                 <td class="p-2.5">
                   <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-bold">
                     {{ req.employment_sector === 'governmental' ? 'حكومي' : 'خاص' }}
@@ -329,7 +342,6 @@
                   <div class="font-bold text-slate-900">هوية: {{ req.national_id || 'غير متوفر' }}</div>
                   <div class="text-[10px] text-slate-500">جوال: {{ req.phone || 'غير متوفر' }} | مدينة: {{ req.city || '-' }}</div>
                 </td>
-             
                 <td class="p-2.5 font-extrabold text-slate-800">{{ req.total_cost }} ريال</td>
                 <td class="p-2.5">
                   <select 
@@ -389,8 +401,11 @@
         const form = ref({
           tier_amount: null,
           total_cost: null,
-          first_installment: null,
-          months_count: 3,
+          installments_count: 4,
+          payment_path: '',
+          early_settlement_first: null,
+          first_installment: '',
+          subsequent_installments_text: '',
           due_day: 27
         });
 
@@ -443,30 +458,32 @@
             showNotification('تم تسجيل الخروج بنجاح', 'success');
           }
         };
-const fetchTiers = async () => {
-  isLoadingTiers.value = true; // بدء التحميل وإظهار أيقونة الدوران
-  try {
-    if (supabaseClient) {
-      const { data, error } = await supabaseClient
-        .from('user_loans')
-        .select('*')
-        .order('id', { ascending: true });
 
-      if (error) {
-        console.error('Error fetching tiers:', error.message);
-        showNotification('خطأ في جلب الشرائح: ' + error.message, 'error');
-      } else {
-        tiers.value = data || [];
-      }
-    }
-  } catch (err) {
-    console.error('Unexpected error:', err);
-  } finally {
-    isLoadingTiers.value = false; // إيقاف التحميل في كلتا الحالتين (نجاح أو خطأ)
-  }
-};
+        const fetchTiers = async () => {
+          isLoadingTiers.value = true;
+          try {
+            if (supabaseClient) {
+              const { data, error } = await supabaseClient
+                .from('user_loans')
+                .select('*')
+                .order('tier_amount', { ascending: true })
+                .order('id', { ascending: true });
 
-      const fetchLoanRequests = async () => {
+              if (error) {
+                console.error('Error fetching tiers:', error.message);
+                showNotification('خطأ في جلب الشرائح: ' + error.message, 'error');
+              } else {
+                tiers.value = data || [];
+              }
+            }
+          } catch (err) {
+            console.error('Unexpected error:', err);
+          } finally {
+            isLoadingTiers.value = false;
+          }
+        };
+
+        const fetchLoanRequests = async () => {
           isLoadingRequests.value = true;
           if (supabaseClient) {
             const { data, error } = await supabaseClient
@@ -489,7 +506,6 @@ const fetchTiers = async () => {
           isLoadingRequests.value = false;
         };
 
-
         const updateStatus = async (id, newStatus) => {
           if (supabaseClient) {
             const { error } = await supabaseClient
@@ -507,62 +523,68 @@ const fetchTiers = async () => {
         };
 
         const editTier = (tier) => {
-  isEditing.value = true;
-  editingId.value = tier.id;
-  
-  // تعبئة نموذج التعديل بالبيانات الحالية للشريحة مع مطابقة أسماء الأعمدة
-  form.value = {
-    tier_amount: tier.tier_amount,
-    total_cost: tier.total_cost,
-    payment_path: tier.payment_path || '',
-    early_settlement_first: tier.early_settlement_first,
-    first_installment: tier.first_installment,
-    subsequent_installments_text: tier.subsequent_installments_text || '',
-    due_day: tier.due_day || 27
-  };
-  
-  // التمرير بسلاسة إلى أعلى الفورم ليرى المستخدم حقول التعديل
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-};
+          isEditing.value = true;
+          editingId.value = tier.id;
+          form.value = {
+            tier_amount: tier.tier_amount,
+            total_cost: tier.total_cost,
+            installments_count: tier.installments_count || 4,
+            payment_path: tier.payment_path || '',
+            early_settlement_first: tier.early_settlement_first,
+            first_installment: tier.first_installment,
+            subsequent_installments_text: tier.subsequent_installments_text || '',
+            due_day: tier.due_day || 27
+          };
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
 
         const cancelEdit = () => {
           isEditing.value = false;
           editingId.value = null;
-          form.value = { tier_amount: null, total_cost: null, first_installment: null, months_count: 3, due_day: 27 };
+          form.value = {
+            tier_amount: null,
+            total_cost: null,
+            installments_count: 4,
+            payment_path: '',
+            early_settlement_first: null,
+            first_installment: '',
+            subsequent_installments_text: '',
+            due_day: 27
+          };
         };
 
-      const saveTier = async () => {
-  isSubmitting.value = true;
-  
-  if (supabaseClient) {
-    const payload = {
-      tier_amount: form.value.tier_amount,
-      total_cost: form.value.total_cost,
-      payment_path: form.value.payment_path,
-      early_settlement_first: form.value.early_settlement_first,
-      first_installment: form.value.first_installment,
-      subsequent_installments_text: form.value.subsequent_installments_text,
-      due_day: form.value.due_day
-    };
+        const saveTier = async () => {
+          isSubmitting.value = true;
+          if (supabaseClient) {
+            const payload = {
+              tier_amount: form.value.tier_amount,
+              total_cost: form.value.total_cost,
+              installments_count: form.value.installments_count,
+              payment_path: form.value.payment_path,
+              early_settlement_first: form.value.early_settlement_first,
+              first_installment: form.value.first_installment,
+              subsequent_installments_text: form.value.subsequent_installments_text,
+              due_day: form.value.due_day
+            };
 
-    if (isEditing.value) {
-      const { error } = await supabaseClient.from('user_loans').update(payload).eq('id', editingId.value);
-      if (error) showNotification('خطأ أثناء التعديل: ' + error.message, 'error');
-      else { showNotification('✨ تم تحديث الشريحة بنجاح!', 'success'); cancelEdit(); await fetchTiers(); }
-    } else {
-      const { error } = await supabaseClient.from('user_loans').insert([payload]);
-      if (error) showNotification('خطأ أثناء الإضافة: ' + error.message, 'error');
-      else { 
-        showNotification('🎉 تمت إضافة الشريحة بنجاح!', 'success'); 
-        form.value = { tier_amount: null, total_cost: null, payment_path: '', early_settlement_first: null, first_installment: null, subsequent_installments_text: '', due_day: 27 }; 
-        await fetchTiers(); 
-      }
-    }
-  }
-  isSubmitting.value = false;
-};
+            if (isEditing.value) {
+              const { error } = await supabaseClient.from('user_loans').update(payload).eq('id', editingId.value);
+              if (error) showNotification('خطأ أثناء التعديل: ' + error.message, 'error');
+              else { showNotification('✨ تم تحديث الشريحة بنجاح!', 'success'); cancelEdit(); await fetchTiers(); }
+            } else {
+              const { error } = await supabaseClient.from('user_loans').insert([payload]);
+              if (error) showNotification('خطأ أثناء الإضافة: ' + error.message, 'error');
+              else { 
+                showNotification('🎉 تمت إضافة الشريحة بنجاح!', 'success'); 
+                cancelEdit();
+                await fetchTiers(); 
+              }
+            }
+          }
+          isSubmitting.value = false;
+        };
 
-const deleteTier = (id) => { deleteModal.value = { show: true, id: id }; };
+        const deleteTier = (id) => { deleteModal.value = { show: true, id: id }; };
 
         const confirmDelete = async () => {
           const id = deleteModal.value.id;
