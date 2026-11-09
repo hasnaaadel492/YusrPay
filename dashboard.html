@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="mohla.jpg">
+    <link rel="apple-touch-icon" href="mohla.jpg">
+    <title>حسابي | منصة مُهْلة</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- مكتبة Supabase CDN الأساسية -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <!-- الهيدر العلوي -->
+    <header class="bg-emerald-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <span>منصة مُهْلة للتمويل الرقمي</span>
+            </h1>
+            <div class="flex items-center gap-3">
+                <span id="user-email" class="text-sm bg-emerald-800 px-3 py-1.5 rounded-lg text-emerald-100">جاري التحميل...</span>
+                <button id="logout-btn" class="bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-1.5 rounded-lg transition">
+                    خروج
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- المحتوى الرئيسي -->
+    <main class="max-w-5xl mx-auto px-4 py-8 space-y-6">
+        
+        <!-- قسم ترحيبي -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">مرحباً بك في لوحة حسابك 👋</h2>
+                <p class="text-gray-500 text-sm mt-1">تابع حالة تمويلك والأقساط المستحقة بكل سهولة.</p>
+            </div>
+            <a href="/index.html" class="text-emerald-700 hover:text-emerald-800 font-medium text-sm border border-emerald-600 px-4 py-2 rounded-xl transition">
+                الرئيسية
+            </a>
+        </div>
+
+        <!-- 1. كارت حالة الطلب -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                حالة الطلب الحالي والتفاصيل المالية
+            </h3>
+            
+            <div id="order-status-container" class="bg-emerald-50 border border-emerald-200 rounded-xl p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="space-y-2">
+                    <div class="flex items-center gap-3">
+                        <span class="text-gray-600 font-medium text-sm">رقم الطلب:</span>
+                        <span id="order-id" class="font-bold text-gray-800 text-sm">#---</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-gray-600 font-medium text-sm">مبلغ التمويل الأساسي:</span>
+                        <span id="order-amount" class="font-bold text-emerald-700 text-sm">--- ريال</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-gray-600 font-medium text-sm">مبلغ التمويل مع الأرباح (الإجمالي):</span>
+                        <span id="order-total-cost" class="font-bold text-teal-800 text-sm">--- ريال</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-gray-600 font-medium text-sm">مبلغ التسوية المبكرة:</span>
+                        <span id="order-early-settlement" class="font-bold text-amber-700 text-sm">--- ريال</span>
+                    </div>
+                </div>
+                <div>
+                    <span id="order-badge" class="px-4 py-2 rounded-full text-sm font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                        قيد المراجعة ⏳
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. جدول تفاصيل الأقساط والدفعات -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                جدول الأقساط والدفعات
+            </h3>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-right text-sm">
+                    <thead>
+                        <tr class="bg-gray-100 text-gray-700">
+                            <th class="p-3.5 rounded-r-lg">القسط</th>
+                            <th class="p-3.5">المبلغ المستحق</th>
+                            <th class="p-3.5">تاريخ الاستحقاق</th>
+                            <th class="p-3.5 rounded-l-lg">الحالة</th>
+                        </tr>
+                    </thead>
+                    <tbody id="installments-list" class="divide-y divide-gray-100">
+                        <tr>
+                            <td colspan="4" class="text-center p-6 text-gray-400">جاري تحميل جدول الأقساط...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ربط Supabase والملف البرمجي -->
+    <script type="module" src="./dashboard.js"></script>
+</body>
+</html>

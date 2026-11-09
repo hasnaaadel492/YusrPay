@@ -116,7 +116,7 @@
         </div>
       </transition>
 
-      <!-- Add / Edit Tier Form (المحسن والمطابق تماماً للجدول المطور) -->
+      <!-- Add / Edit Tier Form -->
       <div :class="['rounded-2xl p-5 shadow-sm border transition-all', isEditing ? 'bg-amber-50/50 border-amber-200' : 'bg-white border-slate-200']">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-sm font-bold flex items-center gap-2" :class="isEditing ? 'text-amber-700' : 'text-slate-800'">
@@ -346,7 +346,7 @@
                 <td class="p-2.5">
                   <select 
                     v-model="req.status" 
-                    @change="updateStatus(req.id, req.status)"
+                    @change="updateStatus(req)"
                     :class="[
                       'w-full p-1.5 rounded-xl font-extrabold text-[11px] border cursor-pointer focus:outline-none',
                       req.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : 
@@ -506,19 +506,68 @@
           isLoadingRequests.value = false;
         };
 
-        const updateStatus = async (id, newStatus) => {
-          if (supabaseClient) {
-            const { error } = await supabaseClient
-              .from('loan_requests')
-              .update({ status: newStatus })
-              .eq('id', id);
+        // 🌟 دالة تحديث حالة الطلب المحدثة وتوليد الأقساط تلقائياً
+        const updateStatus = async (req) => {
+          if (!supabaseClient) return;
 
-            if (error) {
-              showNotification('خطأ أثناء تحديث الحالة: ' + error.message, 'error');
+          try {
+            // 1. تحديث حالة الطلب في جدول loan_requests
+            const { error: updateError } = await supabaseClient
+              .from('loan_requests')
+              .update({ status: req.status })
+              .eq('id', req.id);
+
+            if (updateError) throw updateError;
+
+            // 2. إذا تم تغيير الحالة إلى approved، قم بتوليد صفوف الأقساط تلقائياً
+            if (req.status === 'approved') {
+              // مسح أي أقساط قديمة إن وجدت لتجنب التكرار
+              await supabaseClient.from('installments').delete().eq('request_id', req.id);
+
+              // استخراج عدد الأشهر من نص المسار (مثل: "ثابت (3 أشهر)" -> 3) أو تعيين 3 كافتراضي
+              let monthsCount = 3;
+              if (req.payment_path) {
+                const match = req.payment_path.match(/(\d+)/);
+                if (match && match[1]) {
+                  monthsCount = parseInt(match[1]);
+                }
+              }
+
+              const totalCost = parseFloat(req.total_cost || req.final_amount || 0);
+              const installmentAmount = monthsCount > 0 ? (totalCost / monthsCount).toFixed(2) : totalCost;
+
+              const installmentsData = [];
+              const today = new Date();
+
+              for (let i = 1; i <= monthsCount; i++) {
+                const dueDate = new Date(today);
+                dueDate.setMonth(today.getMonth() + i);
+
+                installmentsData.push({
+                  request_id: req.id,
+                  installment_number: i,
+                  amount: parseFloat(installmentAmount),
+                  due_date: dueDate.toISOString().split('T')[0],
+                  status: 'pending' // قادم
+                });
+              }
+
+              const { error: insertError } = await supabaseClient
+                .from('installments')
+                .insert(installmentsData);
+
+              if (insertError) {
+                console.warn('تنبيه حول الأقساط:', insertError.message);
+              }
+
+              showNotification('🎉 تم إقرار الطلب وتوليد الأقساط للعميل بنجاح!', 'success');
             } else {
               showNotification('✨ تم تحديث حالة الطلب بنجاح!', 'success');
-              await fetchLoanRequests();
             }
+
+            await fetchLoanRequests();
+          } catch (err) {
+            showNotification('خطأ أثناء تحديث الحالة: ' + err.message, 'error');
           }
         };
 

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="icon" type="image/jpeg" href="mohla.jpg">
+  <link rel="apple-touch-icon" href="mohla.jpg">
+    <title>تسجيل الدخول | منصة مُهْلة</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Cairo', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-sm border border-slate-100 p-8 space-y-6">
+        
+        <!-- عنوان الصفحة -->
+        <div class="text-center space-y-2">
+            <div class="inline-flex items-center justify-center w-12 h-12 bg-teal-50 text-amber-500 rounded-full mb-1">
+                <i class="fa-solid fa-hand-holding-dollar text-2xl"></i>
+            </div>
+            <h1 class="text-xl font-black text-teal-900">منصة مُهْلة للتمويل الرقمي</h1>
+            <p class="text-slate-500 text-xs font-semibold">سجل دخولك برقم الجوال لمتابعة حالة طلبك والأقساط</p>
+        </div>
+
+        <!-- رسالة الخطأ أو النجاح -->
+        <div id="error-msg" class="hidden bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl text-xs text-center font-bold"></div>
+
+        <!-- نموذج تسجيل الدخول -->
+        <form id="login-form" class="space-y-4">
+            <div>
+                <label class="block text-xs font-extrabold text-slate-700 mb-1">رقم الجوال</label>
+                <div class="relative">
+                    <input type="tel" id="phone" required dir="ltr"
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-600 text-xs font-bold text-slate-800 text-right"
+                        placeholder="05xxxxxxxx">
+                    <span class="absolute left-3 top-2.5 text-slate-400 text-xs">📱</span>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-extrabold text-slate-700 mb-1">كلمة المرور</label>
+                <input type="password" id="password" required 
+                    class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-600 text-xs font-bold text-slate-800"
+                    placeholder="••••••••">
+            </div>
+
+            <button type="submit" id="submit-btn" 
+                class="w-full bg-teal-700 hover:bg-teal-800 text-white font-black py-3 rounded-xl transition text-xs shadow-md cursor-pointer">
+                تسجيل الدخول
+            </button>
+        </form>
+
+        <div class="text-center pt-2">
+            <a href="/index.html" class="text-slate-500 hover:text-teal-700 text-xs font-bold transition">
+                ← العودة إلى الصفحة الرئيسية
+            </a>
+        </div>
+    </div>
+
+    <!-- كود الجافاسكربت الخاص بعملية الدخول -->
+    <script type="module">
+        import { supabase } from './supabaseClient.js';
+
+        const form = document.getElementById('login-form');
+        const errorDiv = document.getElementById('error-msg');
+        const submitBtn = document.getElementById('submit-btn');
+
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            errorDiv.classList.add('hidden');
+            submitBtn.innerText = 'جاري تسجيل الدخول...';
+            submitBtn.disabled = true;
+
+            const phone = document.getElementById('phone').value.replace(/\D/g, '');
+            const password = document.getElementById('password').value;
+
+            // تحويل رقم الجوال إلى المعرف التلقائي الداخلي
+            const fakeEmail = `user_${phone}@mohla24.com`;
+
+            // طلب تسجيل الدخول من Supabase
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: fakeEmail,
+                password: password,
+            });
+
+            if (error) {
+                errorDiv.innerText = '⚠️ خطأ في رقم الجوال أو كلمة المرور. تأكد من البيانات وحاول مجدداً.';
+                errorDiv.classList.remove('hidden');
+                submitBtn.innerText = 'تسجيل الدخول';
+                submitBtn.disabled = false;
+            } else {
+                // التوجيه للوحة التحكم عند النجاح
+                window.location.href = '/dashboard.html';
+            }
+        };
+    </script>
+</body>
+</html>
