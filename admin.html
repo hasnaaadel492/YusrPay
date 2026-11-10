@@ -506,7 +506,7 @@
           isLoadingRequests.value = false;
         };
 
-        // 🌟 دالة تحديث حالة الطلب المحدثة وتوليد الأقساط تلقائياً
+        // 🌟 دالة تحديث حالة الطلب وتوليد الأقساط الشاملة لجميع أنواع الشرائح والنصوص
         const updateStatus = async (req) => {
           if (!supabaseClient) return;
 
@@ -519,36 +519,85 @@
 
             if (updateError) throw updateError;
 
-            // 2. إذا تم تغيير الحالة إلى approved، قم بتوليد صفوف الأقساط تلقائياً
+            // 2. عند الاعتماد فقط (approved)
             if (req.status === 'approved') {
-              // مسح أي أقساط قديمة إن وجدت لتجنب التكرار
+              // مسح أي أقساط سابقة للطلب
               await supabaseClient.from('installments').delete().eq('request_id', req.id);
 
-              // استخراج عدد الأشهر من نص المسار (مثل: "ثابت (3 أشهر)" -> 3) أو تعيين 3 كافتراضي
-              let monthsCount = 3;
-              if (req.payment_path) {
-                const match = req.payment_path.match(/(\d+)/);
-                if (match && match[1]) {
-                  monthsCount = parseInt(match[1]);
-                }
+              let totalMonths = 3;
+              let firstAmt = 0;
+              let restAmounts = [];
+
+              // البحث عن الشريحة المطابقة للطلب
+              const { data: tierData } = await supabaseClient
+                .from('user_loans')
+                .select('*')
+                .eq('tier_amount', req.tier_amount);
+
+              let matchedTier = null;
+              if (tierData && tierData.length > 0) {
+                // محاولة مطابقة المسار إذا وجد عدة شرائح بنفس المبلغ، أو أخذ الشريحة الأولى
+                matchedTier = tierData.find(t => t.payment_path === req.payment_path) || tierData[0];
               }
 
               const totalCost = parseFloat(req.total_cost || req.final_amount || 0);
-              const installmentAmount = monthsCount > 0 ? (totalCost / monthsCount).toFixed(2) : totalCost;
+
+              if (matchedTier) {
+                totalMonths = Number(matchedTier.installments_count) || 3;
+                
+                // استخراج الأرقام فقط من نص القسط الأول (مثل: "695" أو "695 ريال")
+                const cleanedFirst = String(matchedTier.first_installment || '').replace(/[^\d.]/g, '');
+                firstAmt = parseFloat(cleanedFirst) || 0;
+
+                // استخراج جميع الأرقام من نص الأقساط اللاحقة
+                if (matchedTier.subsequent_installments_text) {
+                  const parts = String(matchedTier.subsequent_installments_text).split(',');
+                  restAmounts = parts
+                    .map(p => parseFloat(p.replace(/[^\d.]/g, '')))
+                    .filter(n => !isNaN(n));
+                }
+              }
+
+              // في حال لم يحدد القسط الأول بشكل صحيح، احسبه كنسبة من الإجمالي
+              if (!firstAmt || firstAmt <= 0) {
+                firstAmt = totalMonths > 0 ? (totalCost / totalMonths) : totalCost;
+              }
+
+              // حساب القسط اللاحق الاحتياطي لو كانت القائمة غير كاملة
+              const rem = totalCost - firstAmt;
+              const subCount = totalMonths - 1;
+              const fallbackSub = subCount > 0 ? (rem / subCount) : 0;
 
               const installmentsData = [];
               const today = new Date();
+              const dueDay = req.employment_sector === 'governmental' ? 27 : 1;
 
-              for (let i = 1; i <= monthsCount; i++) {
-                const dueDate = new Date(today);
-                dueDate.setMonth(today.getMonth() + i);
+              for (let i = 1; i <= totalMonths; i++) {
+                const dueDate = new Date(today.getFullYear(), today.getMonth() + i, dueDay);
+                let currentAmount = 0;
+
+                if (i === 1) {
+                  currentAmount = firstAmt; // الشهر الأول
+                } else {
+                  const idx = i - 2;
+                  if (restAmounts[idx] !== undefined) {
+                    // القسط المحدد بالترتيب للشهر
+                    currentAmount = restAmounts[idx];
+                  } else if (restAmounts.length === 1) {
+                    // إذا كان هناك رقم واحد فقط في النص (مثل 596.67)، يكرر لكل الشهور الباقية
+                    currentAmount = restAmounts[0];
+                  } else {
+                    // التوزيع المتبقي الاحتياطي
+                    currentAmount = fallbackSub;
+                  }
+                }
 
                 installmentsData.push({
                   request_id: req.id,
                   installment_number: i,
-                  amount: parseFloat(installmentAmount),
+                  amount: parseFloat(currentAmount.toFixed(2)),
                   due_date: dueDate.toISOString().split('T')[0],
-                  status: 'pending' // قادم
+                  status: 'pending'
                 });
               }
 
@@ -560,7 +609,7 @@
                 console.warn('تنبيه حول الأقساط:', insertError.message);
               }
 
-              showNotification('🎉 تم إقرار الطلب وتوليد الأقساط للعميل بنجاح!', 'success');
+              showNotification('🎉 تم إقرار الطلب وتوليد الأقساط بنجاح!', 'success');
             } else {
               showNotification('✨ تم تحديث حالة الطلب بنجاح!', 'success');
             }
