@@ -19,6 +19,26 @@
     body { font-family: 'Cairo', sans-serif; } 
     .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
     .fade-enter-from, .fade-leave-to { opacity: 0; }
+    /* 🌟 إخفاء وتحسين شريط التمرير بالكامل */
+    .modal-scroll {
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 #f8fafc;
+      -webkit-overflow-scrolling: touch;
+    }
+    .modal-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .modal-scroll::-webkit-scrollbar-track {
+      background: #f8fafc;
+      border-radius: 10px;
+    }
+    .modal-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 10px;
+    }
+    .modal-scroll::-webkit-scrollbar-thumb:hover {
+      background: #0d6e6e;
+    }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen p-4 pb-12">
@@ -105,6 +125,71 @@
               إلغاء
             </button>
           </div>
+        </div>
+      </div>
+
+      <!-- 👁️ Installments Preview Modal -->
+    <!-- 👁️ Installments Preview Modal -->
+      <div v-if="previewModal.show" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl border border-slate-100 flex flex-col max-h-[80vh] overflow-hidden">
+          
+          <!-- Header -->
+          <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-3 shrink-0">
+            <h3 class="text-sm sm:text-base font-extrabold text-slate-900 flex items-center gap-2">
+              <i class="fa-solid fa-calendar-days text-teal-600"></i>
+              <span>معاينة أقساط الطلب #{{ previewModal.requestId }}</span>
+            </h3>
+            <button @click="previewModal.show = false" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-all flex items-center justify-center active:scale-95">
+              <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+          </div>
+
+          <!-- Loading State -->
+          <div v-if="previewModal.loading" class="text-center py-8 text-xs text-slate-400">
+            <i class="fa-solid fa-circle-notch fa-spin text-2xl block mb-2 text-teal-600"></i>
+            <span>جاري جلب جدول الأقساط...</span>
+          </div>
+
+          <!-- Empty State -->
+          <div v-else-if="previewModal.installments.length === 0" class="text-center py-8 text-xs text-slate-400 border-2 border-dashed border-slate-200 rounded-2xl">
+            لا توجد أقساط مضافة لهذا الطلب حالياً.
+          </div>
+
+          <!-- Installments List (حاوية الأقساط مع التمرير الناعم) -->
+          <div v-else class="space-y-2.5 overflow-y-auto pl-1 pr-2 modal-scroll flex-1 my-1">
+            <div 
+              v-for="inst in previewModal.installments" 
+              :key="inst.id" 
+              class="flex justify-between items-center p-3.5 bg-slate-50/80 hover:bg-slate-50 border border-slate-200/60 rounded-2xl transition-all shadow-sm"
+            >
+              <!-- البيانات والشهور -->
+              <div class="space-y-1 text-right">
+                <span class="font-extrabold text-slate-800 block text-xs sm:text-sm">الشهر {{ inst.installment_number }}</span>
+                <span class="text-[10px] sm:text-[11px] text-slate-400 flex items-center gap-1">
+                  <i class="fa-regular fa-clock text-[9px]"></i> استحقاق: {{ inst.due_date }}
+                </span>
+              </div>
+
+              <!-- المبالغ والحالة -->
+              <div class="text-left space-y-1">
+                <span class="font-black text-teal-700 text-sm sm:text-base block">{{ inst.amount }} <span class="text-[10px] font-normal">ريال</span></span>
+                <span :class="['inline-block text-[9px] sm:text-[10px] px-2.5 py-0.5 rounded-full font-bold', inst.status === 'paid' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-amber-100 text-amber-800 border border-amber-200']">
+                  {{ inst.status === 'paid' ? 'تم الدفع' : 'قادم' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="pt-3 mt-2 border-t border-slate-100 shrink-0">
+            <button 
+              @click="previewModal.show = false" 
+              class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl text-xs transition-all shadow-md active:scale-[0.99]"
+            >
+              إغلاق المعاينة
+            </button>
+          </div>
+
         </div>
       </div>
 
@@ -324,7 +409,7 @@
                 <th class="p-2.5">القطاع</th>
                 <th class="p-2.5">بيانات العميل</th>
                 <th class="p-2.5">الإجمالي</th>
-                <th class="p-2.5">حالة الطلب</th>
+                <th class="p-2.5">حالة الطلب والمعاينة</th>
                 <th class="p-2.5">التاريخ والوقت</th>
               </tr>
             </thead>
@@ -344,19 +429,29 @@
                 </td>
                 <td class="p-2.5 font-extrabold text-slate-800">{{ req.total_cost }} ريال</td>
                 <td class="p-2.5">
-                  <select 
-                    v-model="req.status" 
-                    @change="updateStatus(req)"
-                    :class="[
-                      'w-full p-1.5 rounded-xl font-extrabold text-[11px] border cursor-pointer focus:outline-none',
-                      req.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : 
-                      (req.status === 'rejected' ? 'bg-rose-50 text-rose-700 border-rose-300' : 'bg-amber-50 text-amber-700 border-amber-300')
-                    ]"
-                  >
-                    <option value="pending">⏳ pending (قيد الانتظار)</option>
-                    <option value="approved">✅ approved (موافق عليه)</option>
-                    <option value="rejected">❌ rejected (مرفوض)</option>
-                  </select>
+                  <div class="flex items-center gap-2">
+                    <select 
+                      v-model="req.status" 
+                      @change="updateStatus(req)"
+                      :class="[
+                        'p-1.5 rounded-xl font-extrabold text-[11px] border cursor-pointer focus:outline-none flex-1',
+                        req.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : 
+                        (req.status === 'rejected' ? 'bg-rose-50 text-rose-700 border-rose-300' : 'bg-amber-50 text-amber-700 border-amber-300')
+                      ]"
+                    >
+                      <option value="pending">⏳ pending</option>
+                      <option value="approved">✅ approved</option>
+                      <option value="rejected">❌ rejected</option>
+                    </select>
+                    
+                    <button 
+                      @click="previewInstallments(req.id)" 
+                      title="معاينة الأقساط المولّدة"
+                      class="bg-teal-50 hover:bg-teal-100 text-teal-700 p-2 rounded-xl border border-teal-200 transition-all text-xs flex items-center justify-center"
+                    >
+                      <i class="fa-solid fa-eye"></i>
+                    </button>
+                  </div>
                 </td>
                 <td class="p-2.5 text-slate-400 text-[10px]">{{ new Date(req.created_at).toLocaleString('ar-SA') }}</td>
               </tr>
@@ -388,6 +483,7 @@
         const loginPassword = ref('');
         const userEmail = ref('');
         const deleteModal = ref({ show: false, id: null });
+        const previewModal = ref({ show: false, requestId: null, loading: false, installments: [] });
 
         const tiers = ref([]);
         const loanRequests = ref([]);
@@ -506,12 +602,32 @@
           isLoadingRequests.value = false;
         };
 
+        // 👁️ دالة معاينة الأقساط الخاصة بالطلب
+        const previewInstallments = async (requestId) => {
+          previewModal.value = { show: true, requestId, loading: true, installments: [] };
+          if (!supabaseClient) return;
+
+          try {
+            const { data, error } = await supabaseClient
+              .from('installments')
+              .select('*')
+              .eq('request_id', requestId)
+              .order('installment_number', { ascending: true });
+
+            if (error) throw error;
+            previewModal.value.installments = data || [];
+          } catch (err) {
+            showNotification('خطأ أثناء جلب الأقساط: ' + err.message, 'error');
+          } finally {
+            previewModal.value.loading = false;
+          }
+        };
+
         // 🌟 دالة تحديث حالة الطلب وتوليد الأقساط الشاملة لجميع أنواع الشرائح والنصوص
         const updateStatus = async (req) => {
           if (!supabaseClient) return;
 
           try {
-            // 1. تحديث حالة الطلب في جدول loan_requests
             const { error: updateError } = await supabaseClient
               .from('loan_requests')
               .update({ status: req.status })
@@ -519,16 +635,13 @@
 
             if (updateError) throw updateError;
 
-            // 2. عند الاعتماد فقط (approved)
             if (req.status === 'approved') {
-              // مسح أي أقساط سابقة للطلب
               await supabaseClient.from('installments').delete().eq('request_id', req.id);
 
               let totalMonths = 3;
               let firstAmt = 0;
               let restAmounts = [];
 
-              // البحث عن الشريحة المطابقة للطلب
               const { data: tierData } = await supabaseClient
                 .from('user_loans')
                 .select('*')
@@ -536,7 +649,6 @@
 
               let matchedTier = null;
               if (tierData && tierData.length > 0) {
-                // محاولة مطابقة المسار إذا وجد عدة شرائح بنفس المبلغ، أو أخذ الشريحة الأولى
                 matchedTier = tierData.find(t => t.payment_path === req.payment_path) || tierData[0];
               }
 
@@ -545,11 +657,9 @@
               if (matchedTier) {
                 totalMonths = Number(matchedTier.installments_count) || 3;
                 
-                // استخراج الأرقام فقط من نص القسط الأول (مثل: "695" أو "695 ريال")
                 const cleanedFirst = String(matchedTier.first_installment || '').replace(/[^\d.]/g, '');
                 firstAmt = parseFloat(cleanedFirst) || 0;
 
-                // استخراج جميع الأرقام من نص الأقساط اللاحقة
                 if (matchedTier.subsequent_installments_text) {
                   const parts = String(matchedTier.subsequent_installments_text).split(',');
                   restAmounts = parts
@@ -558,12 +668,10 @@
                 }
               }
 
-              // في حال لم يحدد القسط الأول بشكل صحيح، احسبه كنسبة من الإجمالي
               if (!firstAmt || firstAmt <= 0) {
                 firstAmt = totalMonths > 0 ? (totalCost / totalMonths) : totalCost;
               }
 
-              // حساب القسط اللاحق الاحتياطي لو كانت القائمة غير كاملة
               const rem = totalCost - firstAmt;
               const subCount = totalMonths - 1;
               const fallbackSub = subCount > 0 ? (rem / subCount) : 0;
@@ -577,17 +685,14 @@
                 let currentAmount = 0;
 
                 if (i === 1) {
-                  currentAmount = firstAmt; // الشهر الأول
+                  currentAmount = firstAmt;
                 } else {
                   const idx = i - 2;
                   if (restAmounts[idx] !== undefined) {
-                    // القسط المحدد بالترتيب للشهر
                     currentAmount = restAmounts[idx];
                   } else if (restAmounts.length === 1) {
-                    // إذا كان هناك رقم واحد فقط في النص (مثل 596.67)، يكرر لكل الشهور الباقية
                     currentAmount = restAmounts[0];
                   } else {
-                    // التوزيع المتبقي الاحتياطي
                     currentAmount = fallbackSub;
                   }
                 }
@@ -701,7 +806,7 @@
           handleLogin, handleLogout, tiers, loanRequests, form,
           isLoadingTiers, isLoadingRequests, isSubmitting, isEditing, toast,
           saveTier, editTier, cancelEdit, deleteTier, fetchTiers, fetchLoanRequests,
-          updateStatus, deleteModal, confirmDelete
+          updateStatus, deleteModal, confirmDelete, previewModal, previewInstallments
         };
       }
     }).mount('#admin-app');
