@@ -110,13 +110,23 @@
 
     <main class="max-w-xl mx-auto px-4 mt-4 space-y-4">
       
+      <!-- تنبيه في حال وجود طلب نشط مسبقاً -->
+      <div v-if="hasActiveLoan" class="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-center space-y-3 shadow-sm">
+        <i class="fa-solid fa-circle-exclamation text-3xl text-amber-600"></i>
+        <h2 class="font-extrabold text-sm text-slate-800">لديك طلب تمويل ساري أو قيد المراجعة بالفعل</h2>
+        <p class="text-xs text-slate-600">وفقاً لقواعد المنصة، لا يُسمح بتقديم أكثر من طلب تمويل في نفس الوقت. يمكنك متابعة حالة طلبك الحالي مباشرة من لوحة التحكم.</p>
+        <a href="/dashboard.html" class="inline-block bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition shadow-md">
+          الانتقال إلى لوحة التحكم ومتابعة الطلب <i class="fa-solid fa-arrow-left mr-1"></i>
+        </a>
+      </div>
+
       <!-- Loading State -->
       <div v-if="isLoading" class="text-center py-10 bg-white rounded-2xl shadow-sm border">
         <i class="fa-solid fa-circle-notch fa-spin text-2xl text-teal-600 block mb-2"></i>
         <p class="text-xs text-slate-500 font-bold">جاري تحميل شرائح التمويل المتاحة...</p>
       </div>
 
-      <template v-else-if="tiers.length > 0">
+      <template v-else-if="tiers.length > 0 && !hasActiveLoan">
         
         <!-- 1. اختيار الشريحة ثم خطط الدفع -->
         <div class="glass-card rounded-2xl p-4 shadow-sm space-y-4">
@@ -424,6 +434,7 @@
         const isProcessing = ref(false);
         const isLoading = ref(true);
         const showPassword = ref(false);
+        const hasActiveLoan = ref(false); // متغير تتبع وجود طلب نشط
 
         const toast = ref({ show: false, message: '', type: 'success' });
 
@@ -484,10 +495,33 @@
           selectedTier.value.dueDay = (employmentSector.value === 'governmental') ? 27 : 1;
         };
 
+        // التحقق مما إذا كان المستخدم المسجل لديه طلب ساري أو قيد المراجعة
+        const checkUserActiveLoan = async () => {
+          if (!supabaseClient) return;
+          try {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session && session.user) {
+              const { data: requests } = await supabaseClient
+                .from('loan_requests')
+                .select('id, status')
+                .eq('user_id', session.user.id)
+                .in('status', ['pending', 'approved']);
+
+              if (requests && requests.length > 0) {
+                hasActiveLoan.value = true;
+              }
+            }
+          } catch (err) {
+            console.error('Error checking active loan:', err);
+          }
+        };
+
         const fetchTiersFromSupabase = async () => {
           isLoading.value = true;
           try {
             if (supabaseClient) {
+              await checkUserActiveLoan(); // فحص حالة الطلبات النشطة للمستخدم
+
               const { data, error } = await supabaseClient
                 .from('user_loans')
                 .select('*')
@@ -514,6 +548,10 @@
         };
 
         const proceedToRegistration = () => {
+          if (hasActiveLoan.value) {
+            showNotification('⚠️ عذراً، لديك طلب تمويل ساري أو قيد المراجعة بالفعل.', 'error');
+            return;
+          }
           if (!isAgreed.value) return;
           showRegisterModal.value = true;
         };
@@ -555,6 +593,11 @@
         };
 
       const submitFinalApplication = async () => {
+          if (hasActiveLoan.value) {
+            showNotification('⚠️ عذراً، لديك طلب تمويل ساري أو قيد المراجعة بالفعل.', 'error');
+            return;
+          }
+
           if (!regForm.value.nationalId || !regForm.value.phone || !regForm.value.password) {
             showNotification('⚠️ الرجاء تعبئة جميع بيانات الحساب الأساسية.', 'error');
             return;
@@ -564,7 +607,6 @@
 
           try {
             if (supabaseClient) {
-              // 1. إنشاء حساب للمستخدم في Supabase Auth باستخدام رقم الهاتف كبريد افتراضي
               const fakeEmail = `user_${regForm.value.phone.replace(/\D/g, '')}@mohla24.com`;
               
               const { data: authData, error: authError } = await supabaseClient.auth.signUp({
@@ -576,7 +618,6 @@
               if (authData && authData.user) {
                 userId = authData.user.id;
               } else if (authError && authError.message.includes('already registered')) {
-                // لو الحساب مسجل من قبل، نحاول تسجيل الدخول مباشرة لجلب الـ ID
                 const { data: loginData } = await supabaseClient.auth.signInWithPassword({
                   email: fakeEmail,
                   password: regForm.value.password,
@@ -587,15 +628,15 @@
               }
 
               if (userId) {
-                // **قاعدة العمل: التحقق مما إذا كان لدى المستخدم طلب نشط أو قيد المراجعة حالياً**
-                const { data: existingRequests, error: checkError } = await supabaseClient
+                const { data: existingRequests } = await supabaseClient
                   .from('loan_requests')
                   .select('id, status')
                   .eq('user_id', userId)
-                  .in('status', ['pending', 'approved']); // الطلبات قيد الانتظار أو المقبولة نشطة
+                  .in('status', ['pending', 'approved']);
 
                 if (existingRequests && existingRequests.length > 0) {
-                  showNotification('⚠️ عذراً، لديك طلب تمويل ساري أو قيد المراجعة بالفعل. لا يمكن تقديم أكثر من طلب في نفس الوقت.', 'error');
+                  hasActiveLoan.value = true;
+                  showNotification('⚠️ عذراً، لديك طلب تمويل ساري أو قيد المراجعة بالفعل.', 'error');
                   isProcessing.value = false;
                   showRegisterModal.value = false;
                   return;
@@ -605,7 +646,6 @@
               let salaryUrl = '';
               let simahUrl = '';
 
-              // 2. محاولة رفع المستندات (إن وجدت)
               try {
                 const bucket = supabaseClient.storage.from('loan_documents');
 
@@ -642,9 +682,8 @@
 
               const cleanFirstInstallment = parseFloat(selectedTier.value.first_installment) || 0;
 
-              // 3. إرسال الطلب مع ربطه بـ user_id ورقم الهواتف
               const requestPayload = {
-                user_id: userId, // ربط الطلب بـ المستخدم المسجل
+                user_id: userId,
                 tier_amount: selectedTier.value.tier_amount,
                 total_cost: selectedTier.value.total_cost,
                 first_installment: cleanFirstInstallment,
@@ -670,7 +709,6 @@
               resetForm();
               showRegisterModal.value = false;
               
-              // تحديث حالة الهيدر وتوجيهه للوحة التحكم فوراً
               checkAuthStatus();
               setTimeout(() => {
                 window.location.href = '/dashboard.html';
@@ -679,10 +717,11 @@
           } catch (err) {
             showNotification('⚠️ حدث خطأ: ' + err.message, 'error');
           } finally {
-            isProcessing.value, (isProcessing.value = false);
+            isProcessing.value = false;
             isAgreed.value = false;
           }
         };
+
         onMounted(() => {
           fetchTiersFromSupabase();
           checkAuthStatus();
@@ -707,6 +746,7 @@
           isLoading, 
           regForm, 
           showPassword,
+          hasActiveLoan,
           getSubsequentInstallmentValue,
           selectAmount,
           selectTier, 
