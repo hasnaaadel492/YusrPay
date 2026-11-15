@@ -19,31 +19,20 @@
     body { font-family: 'Cairo', sans-serif; } 
     .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
     .fade-enter-from, .fade-leave-to { opacity: 0; }
-    /* 🌟 إخفاء وتحسين شريط التمرير بالكامل */
     .modal-scroll {
       scrollbar-width: thin;
       scrollbar-color: #cbd5e1 #f8fafc;
       -webkit-overflow-scrolling: touch;
     }
-    .modal-scroll::-webkit-scrollbar {
-      width: 4px;
-    }
-    .modal-scroll::-webkit-scrollbar-track {
-      background: #f8fafc;
-      border-radius: 10px;
-    }
-    .modal-scroll::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 10px;
-    }
-    .modal-scroll::-webkit-scrollbar-thumb:hover {
-      background: #0d6e6e;
-    }
+    .modal-scroll::-webkit-scrollbar { width: 4px; }
+    .modal-scroll::-webkit-scrollbar-track { background: #f8fafc; border-radius: 10px; }
+    .modal-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    .modal-scroll::-webkit-scrollbar-thumb:hover { background: #0d6e6e; }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen p-4 pb-12">
 
-  <div id="admin-app" class="max-w-6xl mx-auto space-y-6">
+  <div id="admin-app" class="max-w-7xl mx-auto space-y-6">
 
     <!-- 🔒 1. Login Screen -->
     <div v-if="!isAuthenticated" class="max-w-md mx-auto my-16 bg-white rounded-3xl p-8 shadow-xl border border-slate-200 text-center space-y-6">
@@ -129,11 +118,9 @@
       </div>
 
       <!-- 👁️ Installments Preview Modal -->
-    <!-- 👁️ Installments Preview Modal -->
       <div v-if="previewModal.show" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl border border-slate-100 flex flex-col max-h-[80vh] overflow-hidden">
           
-          <!-- Header -->
           <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-3 shrink-0">
             <h3 class="text-sm sm:text-base font-extrabold text-slate-900 flex items-center gap-2">
               <i class="fa-solid fa-calendar-days text-teal-600"></i>
@@ -144,25 +131,21 @@
             </button>
           </div>
 
-          <!-- Loading State -->
           <div v-if="previewModal.loading" class="text-center py-8 text-xs text-slate-400">
             <i class="fa-solid fa-circle-notch fa-spin text-2xl block mb-2 text-teal-600"></i>
             <span>جاري جلب جدول الأقساط...</span>
           </div>
 
-          <!-- Empty State -->
           <div v-else-if="previewModal.installments.length === 0" class="text-center py-8 text-xs text-slate-400 border-2 border-dashed border-slate-200 rounded-2xl">
             لا توجد أقساط مضافة لهذا الطلب حالياً.
           </div>
 
-          <!-- Installments List (حاوية الأقساط مع التمرير الناعم) -->
           <div v-else class="space-y-2.5 overflow-y-auto pl-1 pr-2 modal-scroll flex-1 my-1">
             <div 
               v-for="inst in previewModal.installments" 
               :key="inst.id" 
               class="flex justify-between items-center p-3.5 bg-slate-50/80 hover:bg-slate-50 border border-slate-200/60 rounded-2xl transition-all shadow-sm"
             >
-              <!-- البيانات والشهور -->
               <div class="space-y-1 text-right">
                 <span class="font-extrabold text-slate-800 block text-xs sm:text-sm">الشهر {{ inst.installment_number }}</span>
                 <span class="text-[10px] sm:text-[11px] text-slate-400 flex items-center gap-1">
@@ -170,7 +153,6 @@
                 </span>
               </div>
 
-              <!-- المبالغ والحالة -->
               <div class="text-left space-y-1">
                 <span class="font-black text-teal-700 text-sm sm:text-base block">{{ inst.amount }} <span class="text-[10px] font-normal">ريال</span></span>
                 <span :class="['inline-block text-[9px] sm:text-[10px] px-2.5 py-0.5 rounded-full font-bold', inst.status === 'paid' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-amber-100 text-amber-800 border border-amber-200']">
@@ -180,7 +162,6 @@
             </div>
           </div>
 
-          <!-- Footer -->
           <div class="pt-3 mt-2 border-t border-slate-100 shrink-0">
             <button 
               @click="previewModal.show = false" 
@@ -214,104 +195,44 @@
           <div class="grid grid-cols-3 gap-4">
             <div>
               <label class="font-bold text-slate-700 block mb-1">مبلغ الشريحة الأساسي (ريال)</label>
-              <input 
-                v-model.number="form.tier_amount" 
-                type="number" 
-                step="any" 
-                required 
-                placeholder="مثال: 1500" 
-                class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all"
-              >
-              <span class="text-[10px] text-slate-400 mt-1 block">القيمة الأساسية للتمويل المطلوب.</span>
+              <input v-model.number="form.tier_amount" type="number" step="any" required placeholder="مثال: 1500" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all">
             </div>
-            
             <div>
               <label class="font-bold text-slate-700 block mb-1">كلفة الأجل الإجمالية (ريال)</label>
-              <input 
-                v-model.number="form.total_cost" 
-                type="number" 
-                step="any" 
-                required
-                placeholder="مثال: 2640" 
-                class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all"
-              >
-              <span class="text-[10px] text-slate-400 mt-1 block">إجمالي المبلغ المستحق بانتهاء كافة الأقساط.</span>
+              <input v-model.number="form.total_cost" type="number" step="any" required placeholder="مثال: 2640" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all">
             </div>
-
             <div>
               <label class="font-bold text-slate-700 block mb-1">إجمالي عدد الدفعات (الأشهر)</label>
-              <input 
-                v-model.number="form.installments_count" 
-                type="number" 
-                min="2" 
-                max="12" 
-                required 
-                placeholder="مثال: 4" 
-                class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all font-bold text-teal-800"
-              >
-              <span class="text-[10px] text-slate-400 mt-1 block">عدد الدفعات الكلي </span>
+              <input v-model.number="form.installments_count" type="number" min="2" max="12" required placeholder="مثال: 4" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all font-bold text-teal-800">
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="font-bold text-slate-700 block mb-1">خيار السداد والمسار الزمني</label>
-              <input 
-                v-model="form.payment_path" 
-                type="text" 
-                required 
-                placeholder="مثال: ثابت 4 أشهر / خيار 4 أشهر (ربح 40%)" 
-                class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all"
-              >
-              <span class="text-[10px] text-slate-400 mt-1 block">وصف المسار ومدة الأقساط ونسبة الأرباح.</span>
+              <input v-model="form.payment_path" type="text" required placeholder="مثال: ثابت 4 أشهر" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all">
             </div>
-
             <div>
               <label class="font-bold text-slate-700 block mb-1">التسوية المبكرة (الشهر الأول / يوم 27)</label>
-              <input 
-                v-model.number="form.early_settlement_first" 
-                type="number" 
-                step="any" 
-                required 
-                placeholder="مثال: 1950" 
-                class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all"
-              >
-              <span class="text-[10px] text-slate-400 mt-1 block">مبلغ السداد المبكر في اليوم 27 من الشهر الأول.</span>
+              <input v-model.number="form.early_settlement_first" type="number" step="any" required placeholder="مثال: 1950" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all">
             </div>
           </div>
 
           <div class="grid grid-cols-3 gap-4">
             <div>
               <label class="font-bold text-slate-700 block mb-1">قيمة القسط الأول (الشهر 1)</label>
-              <input 
-                v-model="form.first_installment" 
-                type="text" 
-                required 
-                placeholder="مثال: 850 ريال أو 970 ريال (الأرباح شاملة)" 
-                class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all"
-              >
-              <span class="text-[10px] text-slate-400 mt-1 block">المبلغ المستحق في الشهر الأول.</span>
+              <input v-model="form.first_installment" type="text" required placeholder="مثال: 850 ريال" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all">
             </div>
-
             <div>
               <label class="font-bold text-slate-700 block mb-1">تفاصيل الأقساط اللاحقة والدورية</label>
-              <input 
-                v-model="form.subsequent_installments_text" 
-                type="text" 
-                required 
-                placeholder="مثال: 596.67 (لمدة 3 أشهر) أو الشهر 2 (696) الشهر 3 (300)" 
-                class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all"
-              >
-              <span class="text-[10px] text-slate-400 mt-1 block">نص مرن يقبل المبالغ الثابتة أو المركبة.</span>
+              <input v-model="form.subsequent_installments_text" type="text" required placeholder="مثال: 596.67" class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all">
             </div>
-
             <div>
               <label class="font-bold text-slate-700 block mb-1">يوم الاستحقاق الافتراضي</label>
               <select v-model.number="form.due_day" required class="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-600 outline-none transition-all text-xs font-bold text-slate-800">
                 <option :value="27">يوم 27 (قطاع حكومي)</option>
                 <option :value="1">يوم 1 (قطاع خاص / متقاعد)</option>
               </select>
-              <span class="text-[10px] text-slate-400 mt-1 block">تاريخ سداد القسط الشهري</span>
             </div>
           </div>
 
@@ -408,6 +329,7 @@
                 <th class="p-2.5">خيار السداد والمسار</th>
                 <th class="p-2.5">القطاع</th>
                 <th class="p-2.5">بيانات العميل</th>
+                <th class="p-2.5">المستندات المرفقة</th> <!-- عمود المستندات المباشر من قاعدة البيانات -->
                 <th class="p-2.5">الإجمالي</th>
                 <th class="p-2.5">حالة الطلب والمعاينة</th>
                 <th class="p-2.5">التاريخ والوقت</th>
@@ -427,6 +349,24 @@
                   <div class="font-bold text-slate-900">هوية: {{ req.national_id || 'غير متوفر' }}</div>
                   <div class="text-[10px] text-slate-500">جوال: {{ req.phone || 'غير متوفر' }} | مدينة: {{ req.city || '-' }}</div>
                 </td>
+                
+                <!-- عرض المستندات مباشرة من أعمدة جدول قاعدة البيانات -->
+                <td class="p-2.5 space-y-1">
+                  <div v-if="req.salary_doc_url">
+                    <a :href="req.salary_doc_url" target="_blank" class="text-teal-700 hover:bg-teal-50 px-2 py-1 rounded-lg border border-teal-200 transition-all inline-flex items-center gap-1 font-bold text-[11px]">
+                      <i class="fa-solid fa-file-pdf text-rose-500"></i> تعريف / الأجور
+                    </a>
+                  </div>
+                  <div v-else class="text-slate-400 text-[10px]">المستند: غير مرفق</div>
+
+                  <div v-if="req.simah_doc_url">
+                    <a :href="req.simah_doc_url" target="_blank" class="text-blue-700 hover:bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 transition-all inline-flex items-center gap-1 font-bold text-[11px]">
+                      <i class="fa-solid fa-file-shield text-blue-500"></i> تقرير سِمة
+                    </a>
+                  </div>
+                  <div v-else class="text-slate-400 text-[10px]">سِمة: غير مرفق</div>
+                </td>
+
                 <td class="p-2.5 font-extrabold text-slate-800">{{ req.total_cost }} ريال</td>
                 <td class="p-2.5">
                   <div class="flex items-center gap-2">
@@ -566,7 +506,6 @@
                 .order('id', { ascending: true });
 
               if (error) {
-                console.error('Error fetching tiers:', error.message);
                 showNotification('خطأ في جلب الشرائح: ' + error.message, 'error');
               } else {
                 tiers.value = data || [];
@@ -579,6 +518,7 @@
           }
         };
 
+        // جلب الطلبات مباشرة من جدول قاعدة البيانات دون الاعتماد على localStorage
         const fetchLoanRequests = async () => {
           isLoadingRequests.value = true;
           if (supabaseClient) {
@@ -588,21 +528,12 @@
               .order('created_at', { ascending: false });
 
             if (!error && data) {
-              const localData = JSON.parse(localStorage.getItem('mohla_client_details') || '{}');
-              loanRequests.value = data.map(req => ({
-                ...req,
-                national_id: req.national_id || (localData[req.id] ? localData[req.id].national_id : null),
-                phone: req.phone || (localData[req.id] ? localData[req.id].phone : null),
-                city: req.city || (localData[req.id] ? localData[req.id].city : null),
-                salary_doc_url: req.salary_doc_url || (localData[req.id] ? localData[req.id].salary_doc_url : null),
-                simah_doc_url: req.simah_doc_url || (localData[req.id] ? localData[req.id].simah_doc_url : null)
-              }));
+              loanRequests.value = data;
             }
           }
           isLoadingRequests.value = false;
         };
 
-        // 👁️ دالة معاينة الأقساط الخاصة بالطلب
         const previewInstallments = async (requestId) => {
           previewModal.value = { show: true, requestId, loading: true, installments: [] };
           if (!supabaseClient) return;
@@ -623,7 +554,6 @@
           }
         };
 
-        // 🌟 دالة تحديث حالة الطلب وتوليد الأقساط الشاملة لجميع أنواع الشرائح والنصوص
         const updateStatus = async (req) => {
           if (!supabaseClient) return;
 

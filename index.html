@@ -604,7 +604,7 @@
           }
         };
 
-      const submitFinalApplication = async () => {
+  const submitFinalApplication = async () => {
           if (hasActiveLoan.value) {
             showNotification('⚠️ عذراً، لديك طلب تمويل ساري أو قيد المراجعة بالفعل.', 'error');
             return;
@@ -661,21 +661,18 @@
               try {
                 const bucket = supabaseClient.storage.from('loan_documents');
 
-                if (employmentSector.value === 'governmental' && uploadedFiles.value.salaryDoc) {
-                  const fileExt = uploadedFiles.value.salaryDoc.name.split('.').pop();
-                  const fileName = `${Date.now()}_salary.${fileExt}`;
-                  const { error: upErr } = await bucket.upload(fileName, uploadedFiles.value.salaryDoc);
+                // تحديد الملف المرفوع حسب القطاع (تعريف راتب للحكومي أو شهادة مدد الأجور للخاص)
+                const docFile = (employmentSector.value === 'governmental') 
+                  ? uploadedFiles.value.salaryDoc 
+                  : uploadedFiles.value.wagesDoc;
+
+                if (docFile) {
+                  const fileExt = docFile.name.split('.').pop();
+                  const fileName = `${Date.now()}_doc.${fileExt}`;
+                  const { error: upErr } = await bucket.upload(fileName, docFile);
                   if (!upErr) {
                     const { data } = bucket.getPublicUrl(fileName);
-                    salaryUrl = data.publicUrl;
-                  }
-                } else if (employmentSector.value === 'private' && uploadedFiles.value.wagesDoc) {
-                  const fileExt = uploadedFiles.value.wagesDoc.name.split('.').pop();
-                  const fileName = `${Date.now()}_wages.${fileExt}`;
-                  const { error: upErr } = await bucket.upload(fileName, uploadedFiles.value.wagesDoc);
-                  if (!upErr) {
-                    const { data } = bucket.getPublicUrl(fileName);
-                    wagesUrl = data.publicUrl;
+                    salaryUrl = data.publicUrl; // حفظ الرابط في المتغير الموحد لقاعدة البيانات
                   }
                 }
 
@@ -704,7 +701,7 @@
                 national_id: regForm.value.nationalId,
                 phone: regForm.value.phone,
                 city: regForm.value.city,
-                salary_doc_url: salaryUrl,
+                salary_doc_url: salaryUrl, // سيتم تخزين رابط مستند القطاع الخاص أو الحكومي هنا بانتظام
                 simah_doc_url: simahUrl,
                 status: 'pending',
                 serious_fee_paid: false,
@@ -733,7 +730,6 @@
             isAgreed.value = false;
           }
         };
-
         onMounted(() => {
           fetchTiersFromSupabase();
           checkAuthStatus();
